@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Observations | nDART</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/css/tempusdominus-bootstrap-4.min.css" integrity="sha512-3JRrEUwaCkFUBLK1N8HehwQgu8e23jTH4np5NHOmQOobuC4ROQxFwFgBLTnhcnQRMs84muMh0PnnwXlPq5MGjg==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js" integrity="sha512-k6/Bkb8Fxf/c1Tkyl39yJwcOZ1P4cRrJu77p83zJjN2Z55prbFHxPs9vN7q3l3+tSMGPDdoH51AEU8Vgo1cgAA==" crossorigin="anonymous"></script>
+
+
+<div class="content">
+  <div class="nav">
+      <a href="{{ url_for('events') }}">Events</a>&nbsp;|&nbsp;
+      Observations&nbsp;|&nbsp; 
+      <a href="{{ url_for('chat') }}">Chat</a>&nbsp;|&nbsp;
+      <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+  <div class="action-items container">
+    <div class="row">
+      <div class="col">
+        <table class="table race-events" id="events-log">
+          <thead>
+            <tr>
+              <th scope="col" class="text-center" colspan="4">
+                <button type="submit" class="btn btn-success" id="new-observation-btn">New Observation</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="templates" class="d-none">
+      <table id="template-table">
+        <tbody>
+          <tr id="event-template">
+            <td colspan="3" class="container">
+              <div class="row">
+                <div class="col">
+                  <div class="row">
+                    <div class="form-group">
+                      <div class="input-group date" id="start-time-picker" data-target-input="nearest">
+                        <input type="text" class="form-control datetimepicker-input start-time" data-target="#start-time-picker" />
+                        <div class="input-group-append" data-target="#start-time-picker" data-toggle="datetimepicker">
+                          <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <select class="form-control" id="sel-reporter-id">
+                      <option value="" selected disabled>Reported By</option>
+                      <option value="mm1"> Mile Marker 1</option>
+                      <option value="mm2"> Mile Marker 2</option>
+                      <option value="mm3"> Mile Marker 3</option>
+                      <option value="mm4"> Mile Marker 4</option>
+                      <option value="mm5"> Mile Marker 5</option>
+                      <option value="mm6"> Mile Marker 6</option>
+                      <option value="mm7"> Mile Marker 7</option>
+                    </select>
+                  </div>
+                </div>            
+                <div class="col text-center" id="test-test">
+                  <button type="submit" class="btn btn-primary ems-notified-btn">EMS Notified</button>
+                </div>
+                <div class="col text-center">
+                  <button type="submit" class="btn btn-primary ems-arrival-btn">EMS Arrival</button>
+                </div>
+                <div class="col text-center">
+                  <button type="submit" class="btn btn-primary ems-resolved-btn">Resolved</button>
+                </div>
+              </div>
+              <div class="row">
+                <textarea class="form-control" id="loction-id" rows="1" placeholder="Location Description"></textarea>
+              </div>
+              <div class="row">
+                <textarea class="form-control" id="notes-id" rows="3" placeholder="Notes"></textarea>
+              </div>
+            </td>
+            <th scope="row">
+              <p>
+                <h3 class="rowId"></h3>
+              </p>
+              <p>
+                <h3></h3>
+              </p>
+            </th>
+            <script>
+              // EMS Notified
+              $('button.ems-notified-btn').on('click', e => {
+                let el = $(e.target);
+                let rowId = el.closest('tr').attr('id');
+                el.replaceWith($('#ems-notified-template').html());
+                $(`tr#${rowId}`).find('.ems-notified-time').val(moment().format('LT'));
+              });
+              // EMS Arrival
+              $('button.ems-arrival-btn').on('click', e => {
+                let el = $(e.target);
+                let rowId = el.closest('tr').attr('id');
+                el.replaceWith($('#ems-arrival-template').html());
+                $(`tr#${rowId}`).find('.ems-arrival-time').val(moment().format('LT'));
+              });
+              // EMS Resolved
+              $('button.ems-resolved-btn').on('click', e => {
+                let el = $(e.target);
+                let rowId = el.closest('tr').attr('id');
+                el.replaceWith($('#ems-resolved-template').html());
+                $(`tr#${rowId}`).find('.ems-resolved-time').val(moment().format('LT'));
+                $()
+              });
+            </script>
+          </tr> <!-- End of event-template -->
+          <tr id="observation-template">
+            <td colspan="4">
+              <div class="container">
+                <div class="row">
+                  <div class="col-4">
+                    <div class="form-group">
+                      <div class="input-group date" id="datetimepicker3" data-target-input="nearest">
+                        <input type="text" class="form-control datetimepicker-input start-time" data-target="#datetimepicker3" value="" />
+                        <div class="input-group-append" data-target="#datetimepicker3" data-toggle="datetimepicker">
+                          <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+                        </div>
+                      </div>
+                    </div>
+                    <script type="text/javascript">
+                      $(function () {
+                        $('#datetimepicker3').datetimepicker({
+                          format: 'LT'
+                        });
+                      });
+                    </script>
+                  </div>
+                  <div class="col-4">
+                    <select class="form-control" id="sel-reporter-id">
+                      <option value="" selected disabled>Reported By</option>
+                      <option value="mm1"> Mile Marker 1</option>
+                      <option value="mm2"> Mile Marker 2</option>
+                      <option value="mm3"> Mile Marker 3</option>
+                      <option value="mm4"> Mile Marker 4</option>
+                      <option value="mm5"> Mile Marker 5</option>
+                      <option value="mm6"> Mile Marker 6</option>
+                      <option value="mm7"> Mile Marker 7</option>
+                    </select>
+                  </div>
+                  <div class="col-4">
+                    <select class="form-control" id="observation-type-id">
+                      <option selected disabled value="">Category</option>
+                      <option value="1">First Male</option>
+                      <option value="2">First Female</option>
+                      <option value="3">First Handcyle</option>
+                      <option value="4">First Wheelchair</option>
+                    </select>
+                  </div>
+            </td>
+          </tr> <!-- End of observation-template -->
+        </tbody>
+      </table>
+      <div id="ems-notified-template">
+        <div class="row text-center">
+          EMS Notified:
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <div class="input-group date" id="datetimepicker3" data-target-input="nearest">
+              <input type="text" class="form-control datetimepicker-input ems-notified-time" data-target="#datetimepicker3" value="" />
+              <div class="input-group-append" data-target="#datetimepicker3" data-toggle="datetimepicker">
+                <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+              </div>
+            </div>
+          </div>
+          <script type="text/javascript">
+            $(function () {
+              $('#datetimepicker3').datetimepicker({
+                format: 'LT'
+              });
+            });
+          </script>
+        </div>
+      </div> <!-- End of ems-notified-template -->
+      <div id="ems-arrival-template">
+        <div class="row text-center">
+          EMS Arrival:
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <div class="input-group date" id="datetimepicker3" data-target-input="nearest">
+              <input type="text" class="form-control datetimepicker-input ems-arrival-time" data-target="#datetimepicker3" value="" />
+              <div class="input-group-append" data-target="#datetimepicker3" data-toggle="datetimepicker">
+                <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+              </div>
+            </div>
+          </div>
+          <script type="text/javascript">
+            $(function () {
+              $('#datetimepicker3').datetimepicker({
+                format: 'LT'
+              });
+            });
+          </script>
+        </div>
+      </div> <!-- End of ems-arrival-template -->
+      <div id="ems-resolved-template">
+        <div class="row text-center">
+          Resolved:
+        </div>
+        <div class="row">
+          <div class="form-group">
+            <div class="input-group date" id="datetimepicker3" data-target-input="nearest">
+              <input type="text" class="form-control datetimepicker-input ems-resolved-time" data-target="#datetimepicker3" value="" />
+              <div class="input-group-append" data-target="#datetimepicker3" data-toggle="datetimepicker">
+                <div class="input-group-text"><i class="fa fa-clock-o"></i></div>
+              </div>
+            </div>
+          </div>
+          <script type="text/javascript">
+            $(function () {
+              $('#datetimepicker3').datetimepicker({
+                format: 'LT'
+              });
+            });
+          </script>
+        </div>
+      </div> <!-- End of ems-resolved-template -->
+    </div>
+  </div>
+
+
+<script>
+  // Add a new Event
+  $('#new-event-btn').on('click', () => {
+    let rowId = $('#events-log tbody tr').length + 1;
+    let timePickerId = `start-time-picker-${rowId}`;
+    console.log(timePickerId);
+
+    $('#events-log tbody').prepend(`<tr id="event-${rowId}" />`).children('tr:first').append($('#event-template').html());
+    $('#events-log tbody tr:first .start-time').val(moment().format('LT'));
+    $('events-log tbody tr:first .rowId').text(rowId);
+    
+    console.log($('events-log tbody tr:first #start-time-picker').attr('id'));
+
+    $('events-log tbody tr:first #start-time-picker').attr('id', timePickerId);
+
+
+
+    $('events-log tbody tr:first [data-target="#start-time-picker"]').attr('data-target', `#${timePickerId}`);
+    $('events-log tbody tr:first .datetimepicker-input').attr('data-target', timePickerId);
+    $(`#${timePickerId}`).datetimepicker({ format: 'LT' });
+
+
+  });
+
+  // Add a new observation
+  $('#new-observation-btn').on('click', () => {
+    let rowId = $('#events-log tbody tr').length + 1;
+    $('#events-log tbody').prepend(`<tr id="observation-${rowId}" />`).children('tr:first').append($('#observation-template').html());
+    $('#events-log tbody tr:first .start-time').val(moment().format('LT'));
+
+  });
+
+
+
+
+
+</script>
+</body>
+</html>
