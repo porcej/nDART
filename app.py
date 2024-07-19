@@ -104,83 +104,25 @@ def create_database():
     conn =  db_connect()
     cursor = conn.cursor()
 
-    # Encounters Table - Holds a list of all encounters
-    cursor.execute('''CREATE TABLE IF NOT EXISTS encounters (
+    # Events Table - Holds a list of all events
+    cursor.execute('''CREATE TABLE IF NOT EXISTS events (
                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      aid_station TEXT,
-                      bib TEXT,
-                      first_name TEXT,
-                      last_name TEXT,
-                      age INTEGER,
-                      sex TEXT,
-                      participant INTEGER,
-                      active_duty INTEGER,
                       time_in TEXT,
-                      time_out TEXT,
-                      presentation TEXT,
-                      vitals TEXT,
-                      iv TEXT,
-                      iv_fluid_count INTEGER,
-                      oral_fluid INTEGER,
-                      food INTEGER,
-                      na TEXT,
-                      kplus TEXT,
-                      cl TEXT,
-                      tco TEXT,
-                      bun TEXT,
-                      cr TEXT,
-                      glu TEXT,
-                      treatments TEXT,
-                      disposition TEXT,
-                      hospital TEXT,
-                      notes TEXT
-                   )''')
-
-    # Vitals Table - Holds a List of all Vitasl
-    cursor.execute('''CREATE TABLE IF NOT EXISTS vitals (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      encounter_id INTEGER,
-                      vital_time TEXT,
-                      temp TEXT,
-                      resp TEXT,
-                      pulse TEXT,
-                      bp TEXT,
-                      notes TEXT
-                   )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS persons (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT,
                       bib TEXT,
-                      first_name TEXT,
-                      last_name TEXT,
-                      age INTEGER,
-                      sex TEXT,
-                      participant INTEGER,
-                      active_duty INTEGER
+                      reporter TEXT,
+                      location TEXT,
+                      agency_notified TEXT,
+                      agency_arrival TEXT,
+                      resolved TEXT,
+                      notes TEXT
                    )''')
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS presentation (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      code TEXT,
-                      description TEXT
-                   )''')
 
-    cursor.execute('''CREATE TABLE IF NOT EXISTS disposition (
+    cursor.execute('''CREATE TABLE IF NOT EXISTS observations (
                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      code TEXT,
-                      description TEXT
-                   )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      username TEXT NOT NULL,
-                      password TEXT NOT NULL,
-                      role TEXT
-                   )''')
-
-    cursor.execute('''CREATE TABLE IF NOT EXISTS aid_stations (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      name TEXT NOT NULL
+                      time_in TEXT NOT NULL,
+                      location TEXT,
+                      category TEXT
                    )''')
 
 
@@ -189,35 +131,6 @@ def create_database():
     conn.commit()
     conn.close()
 
-
-# Function to export data as a zipped dict
-def zip_encounters(id=None, aid_station=None):
-    where_clause = None
-    if id is not None or aid_station is not None:
-        if id is not None:
-            where_clause = f'ID={id}'
-        if aid_station is not None:
-            where_clause = f"aid_station='{aid_station}'"
-
-    data = zip_table(table_name='encounters', where_clause=where_clause)
-    return data
-
-
-# Function to export data as a zipped dict
-def zip_vitals(encounter_id=None, id=None):
-    where_clause = None
-    if encounter_id is not None and id is not None:
-        where_clause = f'ENCOUNTER_ID={encounter_id} AND ID={id}'
-    elif encounter_id is None and id is None:
-        return {'data': []}
-    else:
-        if encounter_id is not None:
-            where_clause = f'ENCOUNTER_ID={encounter_id}'
-        if id is not None:
-            where_clause = f'id={id}'
-
-    data = zip_table(table_name='vitals', where_clause=where_clause)
-    return data
 
 
 # Function to export participant data as a zipped dict
@@ -321,85 +234,24 @@ def chat():
 #         ADMIN
 # *====================================================================*
 # Route for uploading xlsx file and removing all rows
-@app.route('/admin', methods=['GET', 'POST'])
-@login_required
-def admin():
-    if not current_user.is_admin:
-        return redirect(url_for('app_index'))
-    if request.method == 'POST':
-        if 'remove-people' in request.form:
-            remove_all_rows('persons')
-            return f'All removed all runners.'
-        elif 'remove-encounters' in request.form:
-            remove_all_rows('encounters')
-            send_sio_msg('remove_encounter', 'File Uploaded')
-            return f'All removed all encounters.'
-        elif 'export-people' in request.form:
-            return export_to_xlsx('persons')
-        elif 'export-encounters' in request.form:
-            return export_to_xlsx('encounters')
-        elif 'participants-file' in request.files:
-            file = request.files['participants-file']
-            if file.filename.endswith('.xlsx'):
-                df = pd.read_excel(file)
-                df['participant'] = 1
-                save_to_database(df, 'persons')
-                return 'File uploaded and data loaded into database successfully!'
-            else:
-                return 'Only xlsx files are allowed!'
-        elif 'encounters-file' in request.files:
-            file = request.files['encounters-file']
-            if file.filename.endswith('.xlsx'):
-                df = pd.read_excel(file)
-                save_to_database(df, 'encounters')
-                send_sio_msg('new_encounter', 'File Uploaded')
-                return 'File uploaded and data loaded into database successfully!'
-            else:
-                return 'Only xlsx files are allowed!'
-        else:
-            return 'I am not a teapot.'
 
-    return render_template('admin.html')
-
-# Save DataFrame to SQLite database
-def save_to_database(df, table):
-    with sqlite3.connect(Config.DATABASE_PATH) as conn:
-        df.to_sql(table, conn, if_exists='replace', index=False)
-
-# Remove all rows from the table
-def remove_all_rows(table):
-    with sqlite3.connect(Config.DATABASE_PATH) as conn:
-        conn.execute(f'DELETE FROM {table}')
-
-# Export SQLite table to xlsx file
-def export_to_xlsx(table):
-    with sqlite3.connect(Config.DATABASE_PATH) as conn:
-        df = pd.read_sql_query(f'SELECT * FROM {table}', conn)
-    output = BytesIO()
-    writer = pd.ExcelWriter(output, engine='xlsxwriter')
-    df.to_excel(writer, index=False, sheet_name=table)
-    writer.close()
-    output.seek(0)
-    return send_file(output, download_name=f'{table}.xlsx', as_attachment=True)
 
 
 # *====================================================================*
 #         API
 # *====================================================================*
-@app.route('/api/participants/', methods=['GET'])
+@app.route('/api/events', methods=['GET', 'POST'])
+@app.route('/api/events/', methods=['GET', 'POST'])
+@app.route('/api/events/<event_id>', methods=['GET', 'POST'])
 @login_required
-def api_participants():
-    data = zip_table("persons")
-    return jsonify(data)
+def api_events(event_id=None):
 
-
-@app.route('/api/encounters', methods=['GET', 'POST'])
-@app.route('/api/encounters/<aid_station>', methods=['GET', 'POST'])
-@login_required
-def api_encounters(aid_station=None):
-    if aid_station is not None:
-        aid_station = aid_station.replace("_", " ")
-        aid_station = aid_station.replace("--", "/")
+    if request.method == 'GET':
+        if event_id is not None:
+            event_id = f'ID={id}'
+        
+        data = zip_table(table_name='events', where_clause=event_id)
+        return jsonify(data)
 
     if request.method == 'POST':
         
@@ -429,7 +281,7 @@ def api_encounters(aid_station=None):
             for col in data.keys():
                 set_elem.append(f" {col}='{data[col]}'")
 
-            query = f"UPDATE encounters SET {', '.join(set_elem)} WHERE ID={id}"
+            query = f"UPDATE events SET {', '.join(set_elem)} WHERE ID={id}"
 
             print(f"Query: {query}", file=sys.stderr)
             with sqlite3.connect(Config.DATABASE_PATH) as conn:
@@ -437,9 +289,9 @@ def api_encounters(aid_station=None):
                 cursor.execute(query)
                 conn.commit()
             
-            new_data = zip_encounters(id=id)
+            new_data = zip_table(table_name='events', where_clause=f'ID={id}')
             jnew_data = jsonify(new_data)
-            send_sio_msg('edit_encounter', jnew_data)
+            send_sio_msg('edit_events', jnew_data)
             return jnew_data
 
         # Handle Creating a new record
@@ -449,39 +301,124 @@ def api_encounters(aid_station=None):
             for col in col_elem:
                 val_elem.append(f"'{data[col]}'")
 
-            query = f"INSERT INTO encounters ( {', '.join(col_elem) }) VALUES ({ ', '.join(val_elem) })"
+            query = f"INSERT INTO EVENTS ( {', '.join(col_elem) }) VALUES ({ ', '.join(val_elem) })"
             with sqlite3.connect(Config.DATABASE_PATH) as conn:
                 cursor = conn.cursor()
                 cursor.execute(query)
                 id = cursor.lastrowid
                 conn.commit()
-            new_data = zip_encounters(id=id)
+            new_data = zip_table(table_name='events', where_clause=f'ID={id}')
             jnew_data = jsonify(new_data)
-            send_sio_msg('new_encounter', jnew_data)
+            send_sio_msg('new_event', jnew_data)
             return jnew_data
 
         # Handle Remove
         if action.lower() == 'remove':
             with sqlite3.connect(Config.DATABASE_PATH) as conn:
                 cursor = conn.cursor()
-                cursor.execute(f"DELETE FROM encounters WHERE id={id}")
+                cursor.execute(f"DELETE FROM events WHERE id={id}")
                 conn.commit()
             
-            new_data = zip_encounters(id=id)
+            new_data = zip_table(table_name='events', where_clause=f'ID={id}')
             jnew_data = jsonify(new_data)
-            send_sio_msg('remove_encounter', jnew_data)
+            send_sio_msg('remove_events', jnew_data)
             return jnew_data
 
-    # Handle Get Request
-    if request.method == "GET":
-        with sqlite3.connect(Config.DATABASE_PATH) as conn:
-            data = zip_encounters(aid_station=aid_station)
-        return jsonify(data)
+
 
     return jsonify("Oh no, you should never be here...")
 
 
+# *====================================================================*
+#         API
+# *====================================================================*
+@app.route('/api/observations', methods=['GET', 'POST'])
+@app.route('/api/observations/', methods=['GET', 'POST'])
+@app.route('/api/observations/<event_id>', methods=['GET', 'POST'])
+@login_required
+def api_observations(observation_id=None):
 
+    if request.method == 'GET':
+        if observation_id is not None:
+            observation_id = f'ID={id}'
+        
+        data = zip_table(table_name='observations', where_clause=observation_id)
+        return jsonify(data)
+
+    if request.method == 'POST':
+        
+        # Validate the post request
+        if 'action' not in request.form:
+            return jsonify({ 'error': 'Ahhh I dont know what to do, please provide an action'})
+
+        action = request.form['action']
+
+        pattern = r'\[(\d+)\]\[([a-zA-Z_]+)\]'
+        data = {}
+        id = 0
+        query = ""
+
+        for key in request.form.keys():
+            print(f"Key: {key}", file=sys.stderr)
+            matches = re.search(pattern, key)
+            if matches:
+                id = int(matches.group(1))
+                field_key = matches.group(2)
+                data[field_key] = request.form[key]
+
+        # Handle Editing an existing record
+        if action.lower() == 'edit':
+
+            set_elem = []
+            for col in data.keys():
+                set_elem.append(f" {col}='{data[col]}'")
+
+            query = f"UPDATE observations SET {', '.join(set_elem)} WHERE ID={id}"
+
+            print(f"Query: {query}", file=sys.stderr)
+            with sqlite3.connect(Config.DATABASE_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(query)
+                conn.commit()
+            
+            new_data = zip_table(table_name='observations', where_clause=f'ID={id}')
+            jnew_data = jsonify(new_data)
+            send_sio_msg('edit_observations', jnew_data)
+            return jnew_data
+
+        # Handle Creating a new record
+        if action.lower() == 'create':
+            col_elem = data.keys()
+            val_elem = []
+            for col in col_elem:
+                val_elem.append(f"'{data[col]}'")
+
+            query = f"INSERT INTO observationS ( {', '.join(col_elem) }) VALUES ({ ', '.join(val_elem) })"
+            with sqlite3.connect(Config.DATABASE_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(query)
+                id = cursor.lastrowid
+                conn.commit()
+            new_data = zip_table(table_name='observations', where_clause=f'ID={id}')
+            jnew_data = jsonify(new_data)
+            send_sio_msg('new_observation', jnew_data)
+            return jnew_data
+
+        # Handle Remove
+        if action.lower() == 'remove':
+            with sqlite3.connect(Config.DATABASE_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute(f"DELETE FROM observations WHERE id={id}")
+                conn.commit()
+            
+            new_data = zip_table(table_name='observations', where_clause=f'ID={id}')
+            jnew_data = jsonify(new_data)
+            send_sio_msg('remove_observations', jnew_data)
+            return jnew_data
+
+
+
+    return jsonify("Oh no, you should never be here...")
 
 
 # *====================================================================*
