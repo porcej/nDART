@@ -120,7 +120,8 @@ def create_database():
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS observations (
                       id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      time_in TEXT NOT NULL,
+                      time TEXT NOT NULL,
+                      bib TEXT,
                       location TEXT,
                       category TEXT
                    )''')
@@ -393,7 +394,7 @@ def api_observations(observation_id=None):
             for col in col_elem:
                 val_elem.append(f"'{data[col]}'")
 
-            query = f"INSERT INTO observationS ( {', '.join(col_elem) }) VALUES ({ ', '.join(val_elem) })"
+            query = f"INSERT INTO observations ( {', '.join(col_elem) }) VALUES ({ ', '.join(val_elem) })"
             with sqlite3.connect(Config.DATABASE_PATH) as conn:
                 cursor = conn.cursor()
                 cursor.execute(query)
