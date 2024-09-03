@@ -195,9 +195,9 @@ table.active-encounters-aid tbody tr:nth-child(odd) {background-color: #f2f2f2;}
 }
 
 tr.row-warn {
-  background-color: yellow;
+  background-color: yellow !important;
 }
 
 tr.row-alert {
-  background-color: red;
+  background-color: red !important;
 }
