@@ -52,11 +52,6 @@ const observationsEditor = new DataTable.Editor({
 });
  
 const observationsCols = [
-    {
-            data: null,
-            orderable: false,
-            render: DataTable.render.select()
-    },
     { data: 'time' },
     { data: 'bib' },
     { data: 'location' },
