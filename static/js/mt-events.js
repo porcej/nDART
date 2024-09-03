@@ -6,6 +6,15 @@ function getCurrentTime() {
     return `${hours}:${minutes}`;
 }
 
+function timeStringToDate(timeString) {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+
+    date.setHours(hours, minutes, 0, 0); // Set hours, minutes, seconds, and milliseconds to 0
+
+    return date;
+}
+
 let eventsTable;
 const eventsEditor = new DataTable.Editor({
     ajax: './api/events/',
@@ -84,34 +93,6 @@ const events_cols = [
     { data: 'notes' }
 ];
 
-// const manager_cols = [
-//     { data: 'bib' },
-//     { data: 'first_name' },
-//     { data: 'last_name' },
-//     { data: 'sex' },
-//     { 
-//         data: 'participant',
-//         render: (data, type, row) =>
-//             type === 'display'
-//                 ? '<input type="checkbox" class="editor-participant table-checkbox">'
-//                 : data,
-//         className: 'dt-body-center'
-//     },
-//     { 
-//         data: 'active_duty',
-//         render: (data, type, row) =>
-//             type === 'display'
-//                 ? '<input type="checkbox" class="editor-active-duty table-checkbox">'
-//                 : data,
-//         className: 'dt-body-center'
-//     },
-//     { data: 'time_in', },
-//     { data: 'time_out', },
-//     { data: 'presentation', },
-//     { data: 'disposition' },
-//     { data: 'aid_station' }
-// ];
-
 // Encounters DataTable shown in the page
 eventsTable = new DataTable('#events-table', {
     idSrc: 'id',
@@ -140,59 +121,48 @@ eventsTable = new DataTable('#events-table', {
     select: {
         style: 'os',
         selector: 'td:first-child'
+    },
+    rowCallback: function(row, data, index) {
+        let warnTime = 10; // in minutes
+        let alertTime = 15; // in minutes
+        let notifiedTimeDiff = 0;
+        let agencyArrivalTimeDiff = 0;
+        const currentTime = new Date();
+        if (data.agency_notified && !data.agency_arrival) {
+            const notifiedDate = timeStringToDate(data.agency_notified);
+            const notifiedTime = new Date(notifiedDate);
+            notifiedTimeDiff = (currentTime - notifiedTime) / (1000 * 60); // difference in minutes
+            
+        } else if (data.agency_arrival && !data.resolved) {
+            const agencyArrivalDate = timeStringToDate(data.agency_arrival);
+            const agencyArrivalTime = new Date(agencyArrivalDate);
+            agencyArrivalTimeDiff = (currentTime - agencyArrivalTime) / (1000 * 60); // difference in minutes 
+        }
+        console.log(`Notified: ${notifiedTimeDiff} Arrival: ${agencyArrivalTimeDiff}`);
+
+        if ((notifiedTimeDiff > warnTime && notifiedTimeDiff < alertTime) || (agencyArrivalTimeDiff > warnTime && agencyArrivalTimeDiff < alertTime)) {
+            console.log('here');
+            $(row).removeClass('row-alert');
+            $(row).addClass('row-warn');
+        } else if (notifiedTimeDiff > alertTime || agencyArrivalTimeDiff > alertTime)  {
+            console.log('here2');
+            $(row).removeClass('row-warn');
+            $(row).addClass('row-alert');
+        } else {
+            $(row).removeClass('row-alert');
+            $(row).removeClass('row-warn');
+        }   
     }
 });
 
 // Activate an inline edit on click of a table cell
 eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {
-    eventsEditor.inline(this);
+    eventsEditor.bubble(this, {
+        buttons: {
+            label: '&gt;',
+            fn: function () {
+                this.submit();
+            }
+        }
+    });
 });
-
-// Encounters DataTable shown in the page
-// let participantsTable = new DataTable('#participants-table', {
-//     idSrc: 'id',
-//     ajax: './api/participants/',
-//     columns: [
-//         { data: 'bib' },
-//         { data: 'first_name' },
-//         { data: 'last_name' },
-//         { data: 'age', searchable: false, targets: 0 },
-//         { data: 'sex', },
-//     ],
-//     select: {
-//         style: 'single'
-//     }
-// });
-
-
-// $(document).ready(function () {   
-    // let table = $('#participants-table').DataTable();
-    // $('#participants-table tbody').on('click', 'tr', function () {
-    //     const row = participantsTable.row(this).data();
-    //     encounterEditor
-    //         .create()
-    //         .title(`New Encounter with ${row.last_name}, ${row.first_name}`);
-    //     encounterEditor.field('bib').set(row.bib);
-    //     encounterEditor.field('first_name').set(row.first_name);
-    //     encounterEditor.field('last_name').set(row.last_name);
-    //     encounterEditor.field('age').set(row.age);
-    //     encounterEditor.field('sex').set(row.sex);
-    //     encounterEditor.field('participant').set(1);
-    //     encounterEditor.field('active_duty').set(row.active_duty);
-    //     encounterEditor.buttons('Create')
-    //         .open();
-    // });
-    // $('input[type="checkbox"].table-checkbox').on('click', function(event) {
-    //     event.preventDefault();
-    //     event.stopPropagation();
-        
-    //     return false;
-    // });
-    // socket = io.connect('//' + document.domain + ':' + location.port + '/api');
-    // socket.on('after connect', function(msg) {console.log('Connected')});
-    // socket.on('new_encounter', function(msg) { encounterTable.ajax.reload() });
-    // socket.on('edit_encounter', function(msg) { encounterTable.ajax.reload() });
-    // socket.on('edit_encounter', function(msg) { encounterTable.ajax.reload() });
-    // socket.on('remove_encounter', function(msg) { encounterTable.ajax.reload() });
-
-// });

@@ -14,7 +14,7 @@ const observationsEditor = new DataTable.Editor({
     fields: [
          {
             label: 'Time',
-            name: 'time_in',
+            name: 'time',
             type: 'datetime',
             def: getCurrentTime,
             format: 'HH:mm',
@@ -41,7 +41,7 @@ const observationsEditor = new DataTable.Editor({
             options: [
                 { label: 'Male', value: 'Male' },
                 { label: 'Female', value: 'Female' },
-                { label: 'Handcyle', value: 'Handcyle' }
+                { label: 'Handcycle', value: 'Handcycle' },
                 { label: 'Wheelchair', value: 'Wheelchair' },
                 { label: 'Duo', value: 'Duo' },
 
@@ -51,51 +51,24 @@ const observationsEditor = new DataTable.Editor({
     ]
 });
  
-const observations_cols = [
+const observationsCols = [
     {
             data: null,
             orderable: false,
             render: DataTable.render.select()
     },
-    { data: 'time_in' },
+    { data: 'time' },
     { data: 'bib' },
     { data: 'location' },
     { data: 'category' }
 ];
 
-// const manager_cols = [
-//     { data: 'bib' },
-//     { data: 'first_name' },
-//     { data: 'last_name' },
-//     { data: 'sex' },
-//     { 
-//         data: 'participant',
-//         render: (data, type, row) =>
-//             type === 'display'
-//                 ? '<input type="checkbox" class="editor-participant table-checkbox">'
-//                 : data,
-//         className: 'dt-body-center'
-//     },
-//     { 
-//         data: 'active_duty',
-//         render: (data, type, row) =>
-//             type === 'display'
-//                 ? '<input type="checkbox" class="editor-active-duty table-checkbox">'
-//                 : data,
-//         className: 'dt-body-center'
-//     },
-//     { data: 'time_in', },
-//     { data: 'time_out', },
-//     { data: 'presentation', },
-//     { data: 'disposition' },
-//     { data: 'aid_station' }
-// ];
 
 // Encounters DataTable shown in the page
 observationsTable = new DataTable('#observations-table', {
     idSrc: 'id',
     ajax: './api/observations/',
-    columns: observations_cols,
+    columns: observationsCols,
     layout: {
         topStart: {
             buttons: [
@@ -121,53 +94,3 @@ observationsTable = new DataTable('#observations-table', {
     }
 });
 
-
-
-// Encounters DataTable shown in the page
-// let participantsTable = new DataTable('#participants-table', {
-//     idSrc: 'id',
-//     ajax: './api/participants/',
-//     columns: [
-//         { data: 'bib' },
-//         { data: 'first_name' },
-//         { data: 'last_name' },
-//         { data: 'age', searchable: false, targets: 0 },
-//         { data: 'sex', },
-//     ],
-//     select: {
-//         style: 'single'
-//     }
-// });
-
-
-// $(document).ready(function () {   
-    // let table = $('#participants-table').DataTable();
-    // $('#participants-table tbody').on('click', 'tr', function () {
-    //     const row = participantsTable.row(this).data();
-    //     encounterEditor
-    //         .create()
-    //         .title(`New Encounter with ${row.last_name}, ${row.first_name}`);
-    //     encounterEditor.field('bib').set(row.bib);
-    //     encounterEditor.field('first_name').set(row.first_name);
-    //     encounterEditor.field('last_name').set(row.last_name);
-    //     encounterEditor.field('age').set(row.age);
-    //     encounterEditor.field('sex').set(row.sex);
-    //     encounterEditor.field('participant').set(1);
-    //     encounterEditor.field('active_duty').set(row.active_duty);
-    //     encounterEditor.buttons('Create')
-    //         .open();
-    // });
-    // $('input[type="checkbox"].table-checkbox').on('click', function(observation) {
-    //     observation.probservationDefault();
-    //     observation.stopPropagation();
-        
-    //     return false;
-    // });
-    // socket = io.connect('//' + document.domain + ':' + location.port + '/api');
-    // socket.on('after connect', function(msg) {console.log('Connected')});
-    // socket.on('new_encounter', function(msg) { encounterTable.ajax.reload() });
-    // socket.on('edit_encounter', function(msg) { encounterTable.ajax.reload() });
-    // socket.on('edit_encounter', function(msg) { encounterTable.ajax.reload() });
-    // socket.on('remove_encounter', function(msg) { encounterTable.ajax.reload() });
-
-// });
