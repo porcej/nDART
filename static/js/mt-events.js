@@ -48,6 +48,16 @@ const eventsEditor = new DataTable.Editor({
             ]
         },
         {
+            label: 'Agency',
+            name: 'agency',
+            type: 'select',
+            options: [
+                { label: 'DC FEMS', value: 'DC FEMS' },
+                { label: 'Arl Fire', value: 'Arl Fire' },
+                { label: 'Law', value: 'Law' }
+            ]
+        },
+        {
             label: 'Agency Notified',
             name: 'agency_notified',
             type: 'datetime',
@@ -87,6 +97,7 @@ const events_cols = [
     { data: 'bib' },
     { data: 'location' },
     { data: 'reporter' },
+    { data: 'agency'   },
     { data: 'agency_notified' },
     { data: 'agency_arrival' },
     { data: 'resolved' },
