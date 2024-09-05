@@ -76,6 +76,8 @@ def load_user(id):
 # *====================================================================*
 idx = 0
 Config.USERS = []
+Config.USER_ACCOUNTS =  {k.lower(): v for k, v in Config.USER_ACCOUNTS.items()}
+
 for n, u in Config.USER_ACCOUNTS.items():
 
     # Create a userid for each user
@@ -179,6 +181,8 @@ def login():
     username = request.form.get('username')
     password = request.form.get('password')
 
+    if username is not None:
+        username = username.lower()
 
     # If a post request was made, find the user by 
     # filtering for the username
