@@ -111,11 +111,18 @@ def create_database():
                       bib TEXT,
                       reporter TEXT,
                       location TEXT,
+                      agency TEXT,
                       agency_notified TEXT,
                       agency_arrival TEXT,
                       resolved TEXT,
                       notes TEXT
                    )''')
+
+    # Add Agency to events table if it isn't already there
+    try:
+        cursor.execute('''ALTER TABLE events ADD agency TEXT''')
+    except Exception as e:
+        pass # Its okay, we already have the agency field
 
 
     cursor.execute('''CREATE TABLE IF NOT EXISTS observations (
