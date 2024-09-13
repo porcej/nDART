@@ -119,7 +119,8 @@ const eventsEditor = new DataTable.Editor({
             options: [
                 { label: 'DC FEMS', value: 'DC FEMS' },
                 { label: 'Arl Fire', value: 'Arl Fire' },
-                { label: 'Law', value: 'Law' }
+                { label: 'Law', value: 'Law' },
+                { label: 'Other', value: 'Other' }
             ]
         },
         {
