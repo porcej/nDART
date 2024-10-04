@@ -135,6 +135,124 @@ def create_database():
                       category TEXT
                    )''')
 
+    cursor.execute('''CREATE TABLE IF NOT EXISTS observations_categories (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      value TEXT NOT NULL UNIQUE,
+                      display TEXT,
+                      active INTEGER NOT NULL DEFAULT 1
+                   )''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS locations (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      value TEXT NOT NULL UNIQUE,
+                      display TEXT,
+                      active INTEGER NOT NULL DEFAULT 1
+                   )''')
+
+    cursor.execute('''CREATE TABLE IF NOT EXISTS agencies (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      value TEXT NOT NULL UNIQUE,
+                      display TEXT,
+                      active INTEGER NOT NULL DEFAULT 1
+                   )''')
+
+    # Add Categories for the Observations
+    try:
+        cursor.execute('''INSERT INTO agencies(value, display, active)
+                    VALUES
+                    ('Arl Fire', 'Arl Fire', 1),
+                    ('DC FEMS', 'DC FEMS', 1),
+                    ('Law', 'Law', 1)
+                ''')
+    except Exception as e:
+        pass # Its okay, we have already added these values
+
+    # Add Categories for the Observations
+    try:
+        cursor.execute('''INSERT INTO observations_categories(value, display, active)
+                    VALUES
+                    ('Male', 'Male', 1),
+                    ('Female', 'Female', 1),
+                    ('Wheelchair', 'Wheelchair', 1)
+                ''')
+    except Exception as e:
+        pass # Its okay, we have already added these values
+
+    # Add Locations
+    try:
+        cursor.execute('''INSERT INTO locations(value, display, active)
+                    VALUES
+                    ('MMO', 'MMO', 1),
+                    ('MM1', 'MM1', 1),
+                    ('MM2', 'MM2', 1),
+                    ('WP1', 'WP1', 1),
+                    ('MM2.7', 'MM2.7', 1),
+                    ('MM3.6', 'MM3.6', 1),
+                    ('MM4', 'MM4', 1),
+                    ('MM4.5', 'MM4.5', 1),
+                    ('MM50.1', 'MM50.1', 1),
+                    ('MM50.2', 'MM50.2', 1),
+                    ('AS50', 'AS50', 1),
+                    ('MM50.3', 'MM50.3', 1),
+                    ('AS1', 'AS1', 1),
+                    ('WP2', 'WP2', 1),
+                    ('MM5', 'MM5', 1),
+                    ('MM5.5', 'MM5.5', 1),
+                    ('MM6', 'MM6', 1),
+                    ('WP3', 'WP3', 1),
+                    ('AS2/3', 'AS2/3', 1),
+                    ('MM7', 'MM7', 1),
+                    ('MM7.5', 'MM7.5', 1),
+                    ('MM8', 'MM8', 1),
+                    ('MM9', 'MM9', 1),
+                    ('MM10', 'MM10', 1),
+                    ('WP5/7', 'WP5/7', 1),
+                    ('AS4/6', 'AS4/6', 1),
+                    ('MM11', 'MM11', 1),
+                    ('MM11.5', 'MM11.5', 1),
+                    ('MM12', 'MM12', 1),
+                    ('MM12.5', 'MM12.5', 1),
+                    ('MM13', 'MM13', 1),
+                    ('MM13.5', 'MM13.5', 1),
+                    ('WP6', 'WP6', 1),
+                    ('MM14', 'MM14', 1),
+                    ('MM14.5', 'MM14.5', 1),
+                    ('MM15', 'MM15', 1),
+                    ('MM15.5', 'MM15.5', 1),
+                    ('MM16', 'MM16', 1),
+                    ('MM16.5', 'MM16.5', 1),
+                    ('MM17', 'MM17', 1),
+                    ('AS7', 'AS7', 1),
+                    ('MM17.5', 'MM17.5', 1),
+                    ('MM18', 'MM18', 1),
+                    ('MM18.5', 'MM18.5', 1),
+                    ('FS1', 'FS1', 1),
+                    ('MM19', 'MM19', 1),
+                    ('AS8', 'AS8', 1),
+                    ('MM19.5', 'MM19.5', 1),
+                    ('MM20', 'MM20', 1),
+                    ('MM20.5', 'MM20.5', 1),
+                    ('MM21', 'MM21', 1),
+                    ('MM21.5', 'MM21.5', 1),
+                    ('AS9', 'AS9', 1),
+                    ('WP10', 'WP10', 1),
+                    ('MM22', 'MM22', 1),
+                    ('MM22.5', 'MM22.5', 1),
+                    ('MM22.7', 'MM22.7', 1),
+                    ('MM23', 'MM23', 1),
+                    ('MM23.5', 'MM23.5', 1),
+                    ('FS2', 'FS2', 1),
+                    ('WP11', 'WP11', 1),
+                    ('AS10', 'AS10', 1),
+                    ('MM24', 'MM24', 1),
+                    ('MM24.5', 'MM24.5', 1),
+                    ('WP12', 'WP12', 1),
+                    ('MM25', 'MM25', 1),
+                    ('MM25.5', 'MM25.5', 1),
+                    ('MM26', 'MM26', 1)
+                ''')
+    except Exception as e:
+        pass # Its okay, we have already added these values
 
 
     print("Database created!", file=sys.stderr)
@@ -202,6 +320,27 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# *====================================================================*
+#         ADMIN
+# *====================================================================*
+# Route for uploading xlsx file and removing all rows
+@app.route('/admin', methods=['GET', 'POST'])
+@login_required
+def admin():
+    if not current_user.is_admin:
+        return redirect(url_for('events'))
+    if request.method == 'POST':
+        if 'remove-events' in request.form:
+            remove_all_rows('events')
+            return f'All events removed.'
+        elif 'remove-observations' in request.form:
+            remove_all_rows('observations')
+            return f'All observations removed.'
+        else:
+            return 'I am not a teapot.'
+
+    return render_template('admin.html', active_page='admin', is_admin=current_user.is_admin)
+
 # *--------------------------------------------------------------------*
 #         End User Routes (Web Pages)
 # *--------------------------------------------------------------------*
@@ -216,7 +355,7 @@ def events():
     # conn = db_connect()
     # cursor = conn.cursor()
     # conn.close()
-    return render_template("events.html")
+    return render_template("events.html", active_page='events', is_admin=current_user.is_admin)
 
 @app.route('/observations')
 @login_required
@@ -224,7 +363,7 @@ def observations():
     # conn = db_connect()
     # cursor = conn.cursor()
     # conn.close()
-    return render_template("observations.html")
+    return render_template("observations.html", active_page='observations', is_admin=current_user.is_admin)
 
 
 # *====================================================================*
@@ -238,7 +377,7 @@ def chat():
     room = 'chat'
     # if name == '' or room == '':
     #     return redirect(url_for('.index'))
-    return render_template('chat.html', name=name, room=room, is_admin=current_user.is_admin)
+    return render_template('chat.html', active_page='chat', name=name, room=room, is_admin=current_user.is_admin)
 
 
 
@@ -432,6 +571,13 @@ def api_observations(observation_id=None):
 
     return jsonify("Oh no, you should never be here...")
 
+# Remove all rows from the table
+def remove_all_rows(table):
+    with sqlite3.connect(Config.DATABASE_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute(f'DELETE FROM {table}')
+        conn.commit()
+    
 
 # *====================================================================*
 #         SocketIO API
