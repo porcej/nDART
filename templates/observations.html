@@ -26,12 +26,7 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.0/moment.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.39.0/js/tempusdominus-bootstrap-4.min.js" integrity="sha512-k6/Bkb8Fxf/c1Tkyl39yJwcOZ1P4cRrJu77p83zJjN2Z55prbFHxPs9vN7q3l3+tSMGPDdoH51AEU8Vgo1cgAA==" crossorigin="anonymous"></script>
-  <div class="navbar">
-    <a href="{{ url_for('events') }}">Events</a>
-    <a href="#">Observations</a>
-    <a href="{{ url_for('chat') }}">Chat</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
-  </div>
+  {% include 'navbar.html' %}
   <div class="container">
     <div class="content">
       <h1>Observations</h1>
