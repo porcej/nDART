@@ -106,13 +106,9 @@ const observationsEditor = new DataTable.Editor({
             options: [
                 { label: 'Male', value: 'Male' },
                 { label: 'Female', value: 'Female' },
-                { label: 'Handcycle', value: 'Handcycle' },
                 { label: 'Wheelchair', value: 'Wheelchair' },
-                { label: 'Duo', value: 'Duo' },
-
             ]
-        
-        }     
+        }
     ]
 });
  
@@ -133,6 +129,7 @@ const observationsCols = [
 observationsTable = new DataTable('#observations-table', {
     idSrc: 'id',
     ajax: './api/observations/',
+    order: [[1, 'desc']],
     columns: observationsCols,
     layout: {
         topStart: {

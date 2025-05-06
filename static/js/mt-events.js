@@ -174,6 +174,7 @@ const events_cols = [
 eventsTable = new DataTable('#events-table', {
     idSrc: 'id',
     ajax: './api/events/',
+    order: [[1, 'desc']],
     columns: events_cols,
     layout: {
         topStart: {

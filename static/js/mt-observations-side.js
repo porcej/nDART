@@ -124,6 +124,7 @@ const observationsCols = [
 observationsTable = new DataTable('#observations-table', {
     idSrc: 'id',
     ajax: './api/observations/',
+    order: [[0, 'desc']],
     columns: observationsCols,
     layout: {
         topStart: {
