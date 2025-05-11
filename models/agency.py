@@ -24,5 +24,6 @@ class Agency(db.Model):
             'name': self.name,
             'display_name': self.display_name,
             'description': self.description,
-            'enabled': self.enabled
+            'enabled': self.enabled,
+            'events': [event.to_dict() for event in self.events]
         }

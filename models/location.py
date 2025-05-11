@@ -2,10 +2,17 @@ from extensions import db
 from uuid import uuid4
 
 class Location(db.Model):
+    """Model for locations"""
+    __tablename__ = 'locations'
+
+    # Columns
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(200), nullable=True)
     enabled = db.Column(db.Boolean, default=True)
+
+    # Relationships
+    events = db.relationship('Event', backref=db.backref('location', lazy=True))
 
     def __repr__(self):
         return f"<Location {self.name}>"
@@ -15,5 +22,6 @@ class Location(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
-            'enabled': self.enabled
+            'enabled': self.enabled,
+            'events': [event.to_dict() for event in self.events]
         }
