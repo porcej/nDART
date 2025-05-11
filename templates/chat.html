@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat | nDART</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">
     <script src="{{ url_for('static', filename='vend/jquery/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/socket.io/4.4.1/socket.io.min.js')}}"></script>
             <script type="text/javascript" charset="utf-8">
@@ -37,22 +37,18 @@
                 });
             }
         </script>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">
 </head>
 <body>
-<div class="content">
-  <div class="nav">
-    <a href="{{ url_for('events') }}">Events</a>&nbsp;|&nbsp;
-    <a href="{{ url_for('observations') }}">Observations</a>&nbsp;|&nbsp;
-    <span>Chat</span>&nbsp;|&nbsp;
-      <a href="{{ url_for('logout') }}">Logout</a>
+  {% include 'navbar.html' %}
+
+  <div class="container">
+    <div class="chat-container">
+        <textarea id="chat" cols="80" rows="20"></textarea><br><br>
+        <input id="text" size="80" placeholder="Enter your message here"><br><br>
+    </div>
   </div>
-  <div class="aid-station-stats">
-    <h1> Chatting as {{ current_user.name }}</h1>
-  </div>
-  <div class="chat-container">
-    <textarea id="chat" cols="80" rows="20"></textarea><br><br>
-    <input id="text" size="80" placeholder="Enter your message here"><br><br>
-  </div>
-</div>
+</body>
+</html>
 </body>
 </html>

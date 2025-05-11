@@ -87,7 +87,7 @@ const encounterEditor = new DataTable.Editor({
                 { label: 'Exertional Collapse', value: 'Exertional Collapse' },
                 { label: 'Headache', value: 'Headache' },
                 { label: 'Diarrhea', value: 'Diarrhea' },
-                { label: 'Alterned MS', value: 'Alterned MS' },
+                { label: 'Altered MS', value: 'Altered MS' },
                 { label: 'Heat Exhaustion', value: 'Heat Exhaustion' },
                 { label: 'Heat Stroke', value: 'Heat Stroke' },
                 { label: 'Hyponatremia', value: 'Hyponatremia' },
