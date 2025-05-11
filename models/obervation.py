@@ -13,7 +13,7 @@ class Observation(db.Model):
     location_id = db.Column(db.String(36), db.ForeignKey('location.id'), nullable=True)
     category_id = db.Column(db.String(36), db.ForeignKey('observations_category.id'), nullable=True)
     notes = db.Column(db.Text, nullable=True)
-    
+    delete_flag = db.Column(db.Boolean, default=False)
     # Relationships
     location = db.relationship('Location', backref=db.backref('observations', lazy=True))
     category = db.relationship('ObservationsCategory', backref=db.backref('observations', lazy=True))
@@ -29,5 +29,6 @@ class Observation(db.Model):
             'reporter': self.reporter,
             'location': self.location.to_dict(),
             'category': self.category.to_dict(),
-            'notes': self.notes
+            'notes': self.notes,
+            'delete_flag': self.delete_flag
         }

@@ -17,6 +17,7 @@ class Event(db.Model):
     agency_arrival = db.Column(db.DateTime, nullable=True)
     resolved = db.Column(db.DateTime, nullable=True)
     notes = db.Column(db.Text, nullable=True)
+    delete_flag = db.Column(db.Boolean, default=False)
     
     # Relationships
     location = db.relationship('Location', backref=db.backref('events', lazy=True))
@@ -37,5 +38,6 @@ class Event(db.Model):
             'agency_notified': self.agency_notified,
             'agency_arrival': self.agency_arrival,
             'resolved': self.resolved,
-            'notes': self.notes
+            'notes': self.notes,
+            'delete_flag': self.delete_flag
         }
