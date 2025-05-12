@@ -13,7 +13,10 @@ class Agency(db.Model):
     enabled = db.Column(db.Boolean, default=True)
 
     # Relationships
-    events = db.relationship('Event', backref=db.backref('agency', lazy=True))
+    events = db.relationship('Event', lazy=True, 
+                           foreign_keys='Event.agency_id',
+                           back_populates='agency',
+                           cascade='all')
 
     def __repr__(self):
         return f"<Agency {self.name}>"
@@ -25,5 +28,4 @@ class Agency(db.Model):
             'display_name': self.display_name,
             'description': self.description,
             'enabled': self.enabled,
-            'events': [event.to_dict() for event in self.events]
         }

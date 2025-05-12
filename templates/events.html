@@ -11,6 +11,27 @@
     <script src="{{ url_for('static', filename='vend/DataTables/datatables.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/socket.io/4.4.1/socket.io.min.js')}}"></script>
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">
+    <script type="text/javascript">
+      window.ndart = {};
+      window.ndart.agency_options = [
+        { label: '', value: '' },
+        {% for agency in agencies %}
+          { label: '{{agency.name}}', value: '{{agency.id}}' },
+        {% endfor %}
+      ];
+      window.ndart.assignment_options = [
+      { label: '', value: '' },
+        {% for assignment in assignments %}
+          { label: '{{assignment.name}}', value: '{{assignment.id}}' },
+        {% endfor %}
+      ];
+      window.ndart.observation_category_options = [
+        { label: '', value: '' },
+        {% for observation_category in observation_categories %}
+          { label: '{{observation_category.name}}', value: '{{observation_category.id}}' },
+        {% endfor %}
+      ];
+    </script>
 </head>
 <body>
   {% include 'navbar.html' %}
@@ -48,7 +69,7 @@
       </table>
     </div>
   </div>
-  <script src="{{ url_for('static', filename='js/mt-events.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/mt-observations-side.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/events/index.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='js/observations/side.js') }}" type="module"></script>
 </body>
 </html>

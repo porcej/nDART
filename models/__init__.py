@@ -1,8 +1,8 @@
 from .agency import Agency
 from .event import Event
-from .location import Location
+from .assignment import Assignment
 from .observation import Observation
-from .observation_type import ObservationType
+from .observations_category import ObservationsCategory
 
 
-__all__ = ['Agency', 'Event', 'Location', 'Observation', 'ObservationType']
+__all__ = ['Agency', 'Event', 'Assignment', 'Observation', 'ObservationsCategory']

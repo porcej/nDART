@@ -1,9 +1,9 @@
 from extensions import db
 from uuid import uuid4
 
-class ObservationsCategory(db.Model):
-    """Model for observations categories"""
-    __tablename__ = 'observations_categories'
+class Assignment(db.Model):
+    """Model for assignments"""
+    __tablename__ = 'assignments'
 
     # Columns
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
@@ -12,19 +12,22 @@ class ObservationsCategory(db.Model):
     enabled = db.Column(db.Boolean, default=True)
 
     # Relationships
+    events = db.relationship('Event', lazy=True, 
+                           foreign_keys='Event.reporter_id',
+                           back_populates='reporter',
+                           cascade='all')
     observations = db.relationship('Observation', lazy=True, 
-                           foreign_keys='Observation.category_id',
-                           back_populates='category',
+                           foreign_keys='Observation.reporter_id',
+                           back_populates='reporter',
                            cascade='all')
 
     def __repr__(self):
-        return f"<ObservationsCategory {self.name}>"
-
+        return f"<Assignment {self.name}>"
+    
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'description': self.description,
             'enabled': self.enabled,
-            'observations': [observation.to_dict() for observation in self.observations]
         }
