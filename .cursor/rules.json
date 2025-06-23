@@ -1,0 +1,116 @@
+{
+    "name": "nDART Project Rules",
+    "description": "Rules and patterns for nDART project development",
+    "version": "1.0.0",
+    "rules": {
+        "javascript": {
+            "patterns": {
+                "api_requests": {
+                    "description": "Use fetch for API requests with proper error handling",
+                    "template": "async function sendRequest({ url, method, data = null }) {\n    try {\n        const res = await fetch(url, {\n            method,\n            headers: { 'Content-Type': 'application/json' },\n            body: data ? JSON.stringify(data) : undefined,\n            credentials: 'same-origin'\n        });\n        \n        if (!res.ok) {\n            const error = await res.json();\n            throw new Error(error.message || 'Request failed');\n        }\n        \n        return await res.json();\n    } catch (error) {\n        showToast('error', error.message || 'An error occurred');\n        throw error;\n    }\n}"
+                },
+                "toast_messages": {
+                    "description": "Use consistent toast message handling",
+                    "template": "function showToast(type, message) {\n    const toastEl = document.getElementById(type === 'error' ? 'errorToast' : 'successToast');\n    toastEl.querySelector('.toast-body').textContent = message;\n    new bootstrap.Toast(toastEl).show();\n}"
+                },
+                "form_handling": {
+                    "description": "Use consistent form submission pattern",
+                    "template": "async function handleFormSubmit(e) {\n    e.preventDefault();\n    const formData = new FormData(e.target);\n    \n    try {\n        const response = await sendRequest({\n            url: formAction,\n            method: 'POST',\n            data: Object.fromEntries(formData)\n        });\n        showToast('success', response.success);\n        location.reload();\n    } catch (error) {\n        // Error handled by sendRequest\n    }\n}"
+                }
+            },
+            "conventions": [
+                "Use async/await for asynchronous operations",
+                "Handle errors consistently using try/catch blocks",
+                "Use proper error messages and toast notifications",
+                "Include CSRF protection with credentials: 'same-origin'",
+                "Use proper HTTP methods (GET, POST, PUT, DELETE)",
+                "Validate form data before submission",
+                "Use proper content types for requests"
+            ]
+        },
+        "html": {
+            "patterns": {
+                "modal_structure": {
+                    "description": "Use consistent modal structure with proper ARIA attributes",
+                    "template": "<div class=\"modal fade\" id=\"modalId\" tabindex=\"-1\" aria-labelledby=\"modalLabel\" aria-hidden=\"true\">\n    <div class=\"modal-dialog modal-dialog-centered\">\n        <div class=\"modal-content\">\n            <div class=\"modal-header\">\n                <h5 class=\"modal-title\" id=\"modalLabel\">Modal Title</h5>\n                <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"modal\" aria-label=\"Close\"></button>\n            </div>\n            <div class=\"modal-body\">\n                <!-- Modal content -->\n            </div>\n            <div class=\"modal-footer\">\n                <button type=\"button\" class=\"btn btn-secondary\" data-bs-dismiss=\"modal\">Cancel</button>\n                <button type=\"button\" class=\"btn btn-primary\">Save</button>\n            </div>\n        </div>\n    </div>\n</div>"
+                },
+                "toast_structure": {
+                    "description": "Use consistent toast structure for notifications",
+                    "template": "<div class=\"toast-container position-fixed top-0 end-0 p-3\">\n    <div id=\"toastId\" class=\"toast\" role=\"alert\" aria-live=\"assertive\" aria-atomic=\"true\">\n        <div class=\"toast-header\">\n            <strong class=\"me-auto\">Toast Title</strong>\n            <button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"toast\" aria-label=\"Close\"></button>\n        </div>\n        <div class=\"toast-body\"></div>\n    </div>\n</div>"
+                }
+            },
+            "conventions": [
+                "Use proper ARIA attributes for accessibility",
+                "Include proper modal structure with header, body, and footer",
+                "Use consistent button styling and positioning",
+                "Include proper form labels and required field indicators",
+                "Use proper data attributes for JavaScript functionality",
+                "Include proper error handling UI elements"
+            ]
+        },
+        "general": {
+            "conventions": {
+                "code_style": [
+                    "Use consistent naming conventions for IDs and classes",
+                    "Include proper error handling and user feedback",
+                    "Use proper security measures (CSRF, input validation)",
+                    "Follow responsive design principles",
+                    "Use proper documentation and comments",
+                    "Follow DRY (Don't Repeat Yourself) principles",
+                    "Use proper version control practices"
+                ],
+                "security": [
+                    "Always use CSRF protection for forms and API requests",
+                    "Validate all user input on both client and server side",
+                    "Use proper content types for requests",
+                    "Implement proper error handling without exposing sensitive information",
+                    "Use secure password handling practices",
+                    "Follow the principle of least privilege for user roles"
+                ],
+                "accessibility": [
+                    "Use proper ARIA attributes",
+                    "Ensure proper color contrast",
+                    "Provide alternative text for images",
+                    "Use semantic HTML elements",
+                    "Ensure keyboard navigation works",
+                    "Test with screen readers"
+                ],
+                "performance": [
+                    "Minimize DOM manipulations",
+                    "Use efficient event delegation",
+                    "Optimize API calls",
+                    "Implement proper caching strategies",
+                    "Minimize page reloads",
+                    "Use proper loading indicators"
+                ],
+                "testing": [
+                    "Write unit tests for critical functionality",
+                    "Test error handling scenarios",
+                    "Test accessibility compliance",
+                    "Test responsive design",
+                    "Test cross-browser compatibility",
+                    "Document test cases and scenarios"
+                ]
+            },
+            "file_structure": {
+                "templates": {
+                    "description": "Template organization",
+                    "structure": [
+                        "admin/",
+                        "components/",
+                        "modals/",
+                        "base templates"
+                    ]
+                },
+                "static": {
+                    "description": "Static assets organization",
+                    "structure": [
+                        "js/",
+                        "css/",
+                        "images/"
+                    ]
+                }
+            }
+        }
+    }
+} 

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, Role, ChatRoom, ChatMessage, StationStatus, Assignment, ObservationsCategory, Agency
+from models import User, Role, ChatRoom, ChatMessage, StationStatus, Assignment, ObservationsCategory
 from datetime import datetime, UTC
 from uuid import uuid4
 from . import admin_bp

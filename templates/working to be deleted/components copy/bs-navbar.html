@@ -1,8 +1,0 @@
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.dashboard') }}"> Dashboard </a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.events') }}"> Events </a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.observations') }}"> Observations </a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.station_statuses') }}"> Station Statuses </a></li>
-<li class="nav-item"><a class="nav-link" href="{{ url_for('chat') }}"> Chat </a></li>
-{% if is_admin %}
-    <li class="nav-item"><a class="nav-link" href="{{ url_for('admin') }}"> Admin </a></li>
-{% endif %}

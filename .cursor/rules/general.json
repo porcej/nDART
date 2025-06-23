@@ -1,0 +1,67 @@
+{
+    "name": "General Project Rules",
+    "description": "General coding standards and guidelines for nDART project",
+    "version": "1.0.0",
+    "conventions": {
+        "code_style": [
+            "Use consistent naming conventions for IDs and classes",
+            "Include proper error handling and user feedback",
+            "Use proper security measures (CSRF, input validation)",
+            "Follow responsive design principles",
+            "Use proper documentation and comments",
+            "Follow DRY (Don't Repeat Yourself) principles",
+            "Use proper version control practices"
+        ],
+        "security": [
+            "Always use CSRF protection for forms and API requests",
+            "Validate all user input on both client and server side",
+            "Use proper content types for requests",
+            "Implement proper error handling without exposing sensitive information",
+            "Use secure password handling practices",
+            "Follow the principle of least privilege for user roles"
+        ],
+        "accessibility": [
+            "Use proper ARIA attributes",
+            "Ensure proper color contrast",
+            "Provide alternative text for images",
+            "Use semantic HTML elements",
+            "Ensure keyboard navigation works",
+            "Test with screen readers"
+        ],
+        "performance": [
+            "Minimize DOM manipulations",
+            "Use efficient event delegation",
+            "Optimize API calls",
+            "Implement proper caching strategies",
+            "Minimize page reloads",
+            "Use proper loading indicators"
+        ],
+        "testing": [
+            "Write unit tests for critical functionality",
+            "Test error handling scenarios",
+            "Test accessibility compliance",
+            "Test responsive design",
+            "Test cross-browser compatibility",
+            "Document test cases and scenarios"
+        ]
+    },
+    "file_structure": {
+        "templates": {
+            "description": "Template organization",
+            "structure": [
+                "admin/",
+                "components/",
+                "modals/",
+                "base templates"
+            ]
+        },
+        "static": {
+            "description": "Static assets organization",
+            "structure": [
+                "js/",
+                "css/",
+                "images/"
+            ]
+        }
+    }
+} 
