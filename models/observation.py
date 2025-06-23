@@ -27,9 +27,6 @@ class Observation(db.Model):
             'id': self.id,
             'time': self.time.strftime("%H:%M") if self.time else None,
             'bib': self.bib,
-            'reporter': self.reporter_id,
-            'location': self.location,
-            'category': self.category_id,
-            'notes': self.notes,
-            'delete_flag': self.delete_flag
+            'reporter_id': self.reporter_id,
+            'category_id': self.category_id,
         }

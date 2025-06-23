@@ -1,0 +1,123 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Agencies Management{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Agencies Management</h1>
+    </div>
+
+    <div id="agenciesTable" class="card shadow-sm"
+        data-api-url={{ url_for('admin.agencies') | tojson }}
+        data-export-url={{ url_for('admin.export_agencies') | tojson }}
+        data-import-url={{ url_for('admin.import_agencies') | tojson }}
+        data-remove-all-url={{ url_for('admin.remove_all_agencies') | tojson }}>
+        <div class="card-body">
+            {% with form_name='Agencies', import_export=True, show_inactive=True, create_icon='bi-building' %}
+                {% include 'components/modals/admin_table_header.html' %}
+            {% endwith %}
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle agencies-table" style="display: none;"">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Sort Order</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for agency in agencies|sort(attribute='sort_order') %}
+                        <tr data-active="{{ agency.enabled }}">
+                            <td>
+                                <span class="badge bg-primary fs-6">
+                                    {{ agency.name }}
+                                </span>
+                            </td>
+                            <td>{{ agency.description or 'No description' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if agency.enabled else 'secondary' }}">
+                                    {{ 'Active' if agency.enabled else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ agency.sort_order }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" aria-label="Edit" class="btn btn-sm btn-outline-primary edit-btn" data-id="{{ agency.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" aria-label="Delete" class="btn btn-sm btn-outline-danger delete-btn" data-id="{{ agency.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agency Modal -->
+<div class="modal fade" id="agencyModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Create Agency</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form id="agencyForm">
+                <div class="modal-body">
+                    <input type="hidden" id="agencyId" data-field="id">
+                    
+                    <div class="mb-3">
+                        <label for="agencyName" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="agencyName" data-field="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="agencyDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="agencyDescription" data-field="description" rows="3"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="agencySortOrder" class="form-label">Sort Order <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="agencySortOrder" data-field="sort_order" required min="0" value="0">
+                        <div class="form-text">Lower numbers appear first in the list</div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="agencyEnabled" data-field="enabled" checked>
+                        <label class="form-check-label" for="agencyEnabled">Active</label>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% with form_name='Agencies', form_action=url_for('admin.import_agencies') %}
+    {% include 'components/modals/import_file.html' %}
+{% endwith %}
+{% with item_name='Agency' %}
+    {% include 'components/modals/delete_item.html' %}
+{% endwith %}
+{% include 'components/toast.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/agencies.js') }}" type="module"></script>
+{% endblock %} 

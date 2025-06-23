@@ -31,46 +31,18 @@ from werkzeug.utils import secure_filename
 
 from config import Config
 from extensions import db, migrate, login_manager, jwt, socketio
+from models import User
 
 
 from models import Agency, Event, Assignment, Observation, ObservationsCategory
 
 # Import blueprints
-# from blueprints.auth import auth_bp
+from blueprints.auth import auth_bp
 from blueprints.main import main_bp
-# from blueprints.chat import chat_bp
-# from blueprints.admin import admin_bp
+from blueprints.chat import chat_bp
+from blueprints.admin import admin_bp
 from blueprints.internal_api import internal_api_bp
 # from blueprints.public_api import public_api_bp
-
-# Setup some user stuff here
-class User(UserMixin):
-    def __init__(self, name, id, role, active=True):
-        self.id = id
-        self.name = name
-        self.role = role
-        self.active = active
-
-    def get_id(self):
-        return self.id
-
-    @property
-    def is_active(self):
-        return self.active
-
-    @property
-    def is_admin(self):
-        return self.role == 'admin'
-
-    @property
-    def is_manager(self):
-        return self.role == 'manager'
-    
-
-@login_manager.user_loader
-def load_user(id):
-    return Config.USERS[int(id)]
-
 
 def create_app(config_class=Config):
     """Create and configure the Flask application using the factory pattern.
@@ -93,45 +65,25 @@ def create_app(config_class=Config):
     socketio.init_app(app)
     
     # Register blueprints
-    # app.register_blueprint(auth_bp)
+    app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
-    # app.register_blueprint(chat_bp)
-    # app.register_blueprint(admin_bp)
+    app.register_blueprint(chat_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(internal_api_bp)
     # app.register_blueprint(internal_api_v2_bp)
     # app.register_blueprint(public_api_bp)
 
     # Configure Flask-Login
-    login_manager.login_view = 'login'
+    login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
 
-    # Initialize Application Users
-    idx = 0
-    app.config['USERS'] = []
-    app.config['USER_ACCOUNTS'] =  {k.lower(): v for k, v in app.config['USER_ACCOUNTS'].items()}
-
-    for n, u in app.config['USER_ACCOUNTS'].items():
-
-        # Create a userid for each user
-        u['id'] = idx
-
-        # Set password if no password is provided
-        if (u['password'] is None or u['password'] == ''):
-            u['password'] = Config.USER_PASSWORD
-        app.config['USERS'].append(User(n, idx, u['role']))
-        idx += 1
-    
     @login_manager.user_loader
     def load_user(user_id):
-        return app.config['USERS'][int(user_id)]
-        # # Check if user_id is UUID format or numeric ID
-        # if '-' in user_id:  # Likely a UUID
-        #     return User.query.filter_by(uuid=user_id).first()
-        # else:
-        #     try:
-        #         return User.query.filter_by(id=int(user_id)).first()
-        #     except ValueError:
-        #         return None
+        # Check if user_id is UUID format or numeric ID
+        if '-' in user_id:  # Likely a UUID
+            return User.query.filter_by(id=user_id).first()
+        else:
+            return None
             
     @app.context_processor
     def utility_processor():
@@ -146,38 +98,38 @@ def init_app(app):
 
 
 
-    # *--------------------------------------------------------------------*
-    #         Authentication & User Management
-    # *--------------------------------------------------------------------*
-    @app.route("/login", methods=["GET", "POST"])
-    def login():
-        if current_user.is_authenticated:
-            print("Current user is at login page but is authenticated", file=sys.stderr)
-            return redirect(url_for('app_index'))
+    # # *--------------------------------------------------------------------*
+    # #         Authentication & User Management
+    # # *--------------------------------------------------------------------*
+    # @app.route("/login", methods=["GET", "POST"])
+    # def login():
+    #     if current_user.is_authenticated:
+    #         print("Current user is at login page but is authenticated", file=sys.stderr)
+    #         return redirect(url_for('app_index'))
 
-        username = request.form.get('username')
-        password = request.form.get('password')
+    #     username = request.form.get('username')
+    #     password = request.form.get('password')
 
-        if username is not None:
-            username = username.lower()
+    #     if username is not None:
+    #         username = username.lower()
 
-        # If a post request was made, find the user by 
-        # filtering for the username
-        if request.method == "POST":
-            if username in app.config['USER_ACCOUNTS'].keys():
-                if password == app.config['USER_ACCOUNTS'][username]['password']:
-                    user = app.config['USERS'][app.config['USER_ACCOUNTS'][username]['id']]
-                    login_user(user, remember='y')
-                    return redirect(url_for('app_index'))
-            flash('Invalid username or password', 'error')
-            # Redirect the user back to the home
-            # (we'll create the home route in a moment)
-        return render_template("login.html", aid_stations=app.config['USER_ACCOUNTS'].keys())
+    #     # If a post request was made, find the user by 
+    #     # filtering for the username
+    #     if request.method == "POST":
+    #         if username in app.config['USER_ACCOUNTS'].keys():
+    #             if password == app.config['USER_ACCOUNTS'][username]['password']:
+    #                 user = app.config['USERS'][app.config['USER_ACCOUNTS'][username]['id']]
+    #                 login_user(user, remember='y')
+    #                 return redirect(url_for('app_index'))
+    #         flash('Invalid username or password', 'error')
+    #         # Redirect the user back to the home
+    #         # (we'll create the home route in a moment)
+    #     return render_template("login.html", aid_stations=app.config['USER_ACCOUNTS'].keys())
 
-    @app.route('/logout')
-    def logout():
-        logout_user()
-        return redirect(url_for('login'))
+    # @app.route('/logout')
+    # def logout():
+    #     logout_user()
+    #     return redirect(url_for('login'))
 
     # *====================================================================*
     #         ADMIN
@@ -206,18 +158,7 @@ def init_app(app):
     @app.route('/')
     @login_required
     def app_index():
-        return redirect(url_for('main_bp.events'))
-
-    # @app.route('/events')
-    # @login_required
-    # def events():
-    #     return render_template("events.html", active_page='events', is_admin=current_user.is_admin)
-
-    @app.route('/observations')
-    @login_required
-    def observations():
-        return render_template("observations.html", active_page='observations', is_admin=current_user.is_admin)
-
+        return redirect(url_for('main_bp.dashboard'))
 
     # *====================================================================*
     #         Chat
@@ -232,19 +173,6 @@ def init_app(app):
         #     return redirect(url_for('.index'))
         return render_template('chat.html', active_page='chat', name=name, room=room, is_admin=current_user.is_admin)
 
-
-
-    # *====================================================================*
-    #         ADMIN
-    # *====================================================================*
-    # Route for uploading xlsx file and removing all rows
-
-
-   
-
-
-   
-        
 
     # *====================================================================*
     #         SocketIO API

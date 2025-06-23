@@ -25,6 +25,18 @@ def send_observation_notification(event_type, data, room=None):
     broadcast = room is None
     socketio.emit(event_type, data, namespace='/api', room=room) 
 
+def send_status_report_notification(event_type, data, room=None):
+    """
+    Send Socket.IO notifications for status reports.
+    
+    Args:
+        event_type (str): Type of event ('new_status_report', 'edit_status_report', 'remove_status_report')   
+        data (dict): Data to send with the event
+        room (str, optional): Room to send the event to. Defaults to None (broadcast).
+    """
+    broadcast = room is None
+    socketio.emit(event_type, data, namespace='/api', room=room) 
+
 def send_update_notification(update_type,room=None):
     """
     Send Socket.IO notifications for agencies.
@@ -35,17 +47,6 @@ def send_update_notification(update_type,room=None):
     """
     broadcast = room is None
     socketio.emit(update_type, {}, namespace='/api', room=room)
-
-def send_agency_notification(room=None):
-    """
-    Send Socket.IO notifications for agencies.
-    
-    Args:
-        room (str, optional): Room to send the notification to. Defaults to None (broadcast).
-    """
-    broadcast = room is None
-    socketio.emit("agency_update", {}, namespace='/api', room=room) 
-
 
 # API Utilities
 def handle_date_fields(data):

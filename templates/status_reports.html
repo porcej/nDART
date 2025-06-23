@@ -1,0 +1,24 @@
+{% extends "components/bs-base.html" %}
+
+{% block title %}Status Reports{% endblock %}
+
+{% block content %}
+    <div class="content">
+      <h1>Status Reports</h1>
+      <table cellpadding="0" cellspacing="0" border="0" class="display table table-striped table-hover" id="status-reports-table" width="100%">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Time</th>
+          <th>Reported By</th>
+          <th>Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+    </table>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/status-reports.js') }}" type="module"></script>
+{% endblock %}

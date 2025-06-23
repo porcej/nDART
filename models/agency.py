@@ -8,8 +8,8 @@ class Agency(db.Model):
     # Columns   
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     name = db.Column(db.String(100), nullable=False)
-    display_name = db.Column(db.String(100), nullable=True)
     description = db.Column(db.String(200), nullable=True)
+    sort_order = db.Column(db.Integer, default=0)
     enabled = db.Column(db.Boolean, default=True)
 
     # Relationships
@@ -25,7 +25,17 @@ class Agency(db.Model):
         return {
             'id': self.id,
             'name': self.name,
-            'display_name': self.display_name,
             'description': self.description,
-            'enabled': self.enabled,
+            'sort_order': self.sort_order,
+            'enabled': self.enabled
         }
+
+    def to_form_options(self):
+        return {
+            'label': self.name,
+            'value': self.id,
+            'sort_order': self.sort_order
+        }
+    
+    def get_agency_events(self):
+        return Event.query.filter_by(agency_id=self.id).all()

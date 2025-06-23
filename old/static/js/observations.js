@@ -1,0 +1,167 @@
+import { getCurrentTime, timeStringToDate, findLabel, pruneEmptyFields, handlePreSubmit, prepareOptions} from './utils.js';
+import { initSocketMessages } from './sio.js';
+
+const DATA_TYPE = 'observation';
+
+let observationsTable;
+let currentObservationId = null;
+let openObservationsVals = null;
+const pendingObservationIds = new Set();
+
+const observationsEditor = new DataTable.Editor({
+    ajax: {
+        url: './api/observations/',
+        dataSrc: 'data',
+        create: {
+            url: './api/observations',
+            type: 'POST',
+            contentType: 'application/json',
+            data: function(d) { 
+                return JSON.stringify(d);
+            },
+        },
+        edit: {
+            url: './api/observations/_id_',
+            type: 'PUT',
+            contentType: 'application/json',
+            data: function (d) {
+                return JSON.stringify(d);
+            }
+        },
+        remove: {
+            url: './api/observations/_id_',
+            type: 'DELETE',
+            contentType: 'application/json',
+            data: function (d) {
+                return 1;
+            }
+        }
+    },
+    table: '#observations-table',
+    idSrc: 'id',
+    fields: [
+        {
+            name: 'id',
+            type: 'hidden',
+            def: function() { return crypto.randomUUID(); }
+        },
+         {
+            label: 'Time',
+            name: 'time',
+            type: 'datetime',
+            def: getCurrentTime,
+            format: 'HH:mm',
+            fieldInfo: 'Start of observation - 24 hour clock (HH:mm)'
+        },
+        {
+            label: 'Bib #',
+            name: 'bib'
+        },
+        {
+            label: 'Location',
+            name: 'reporter_id',
+            type: 'select',
+            options: prepareOptions('assignments')
+        },
+        {
+            label: 'Category',
+            name: 'category_id',
+            type: 'select',
+            options: prepareOptions('observations_categories')
+        }
+    ]
+});
+ 
+const observationsCols = [
+    {
+        data: null,
+        orderable: false,
+        render: DataTable.render.select()
+    },
+    { data: 'time' },
+    { data: 'bib' },
+    { 
+        data: 'reporter_id',
+        render: function(data) {
+            return findLabel('assignments', data);
+        }
+    },
+    { 
+        data: 'category_id',
+        render: function(data) {
+            return findLabel('observations_categories', data);
+        }
+    }
+];
+
+
+// Observation DataTable shown in the page
+observationsTable = new DataTable('#observations-table', {
+    stateSave: true,
+    idSrc: 'id',
+    rowId: function(a) {
+        return `${DATA_TYPE}_${a.id}`;
+    },
+    ajax: './api/observations/',
+    order: [[1, 'desc']],
+    columns: observationsCols,
+    layout: {
+        topStart: {
+            buttons: [
+                { extend: 'create', editor: observationsEditor },
+                { extend: 'edit', editor: observationsEditor },
+                { 
+                    extend: 'remove', editor: observationsEditor,
+                    formMessage: function (e, dt) {
+                        let row = dt
+                            .rows(e.modifier())
+                            .data()[0]
+                        return (
+                            'Are you sure you want to delete this ?' +
+                            `<li> ${row['time']} ${row['bib'] != "" ? `with bib # ${row['bib']}` : ''}</li>`
+                        );
+                    }
+                }
+            ]
+        }
+    },
+    select: {
+        style: 'single'
+    }
+});
+
+// Activate an inline edit on click of a table cell
+// observationsTable.on('click', 'tbody td:not(:first-child)', function (e) {
+//     observationsEditor.bubble(this, {
+//         buttons: {
+//             label: '&gt;',
+//             fn: function () {
+//                 this.submit();
+//             }
+//         }
+//     });
+// });
+// Activate the bubble editor on click of a table cell
+observationsTable.on('click', 'tbody td:not(:first-child)', function (e) {
+    observationsEditor.bubble(this);
+});
+
+observationsEditor.on('open', function() {
+    openObservationsVals = observationsEditor.get();
+    console.log(`Open ID: ${openObservationsVals.id} Pending:`, pendingObservationIds);
+});
+
+observationsEditor.on('preSubmit', function(e, data, action) {
+    handlePreSubmit(e, data, action, openObservationsVals);
+    pendingObservationIds.add(openObservationsVals.id);
+    console.log(`Pre Submit ID: ${openObservationsVals.id} Pending:`, pendingObservationIds);
+});
+
+observationsEditor.on('postCreate', function (e, json, data) {
+    if (data && data.id) {
+        pendingObservationIds.delete(data.id);
+        console.log(`Post Create ID: ${data.id} Pending:`, pendingObservationIds);
+    }
+});
+
+initSocketMessages(observationsTable, DATA_TYPE, pendingObservationIds);

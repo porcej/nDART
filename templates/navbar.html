@@ -1,9 +1,0 @@
-  <div class="navbar">
-    <a href="{{ url_for('main_bp.events') }}"> Events</a>
-    <a href="{{ url_for('observations') }}"> Observations</a>
-    <a href="{{ url_for('chat') }}"> Chat </a>
-    {% if is_admin %}
-      <a href="{{ url_for('admin') }}"> Admin </a>
-    {% endif %}
-    <a href="{{ url_for('logout') }}">Logout</a>
-  </div>
