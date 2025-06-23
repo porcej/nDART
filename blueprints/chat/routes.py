@@ -9,7 +9,7 @@ import bleach
 import logging
 
 from extensions import db, socketio
-from models import ChatMessage, ChatRoom
+from models import ChatMessage, ChatRoom, User
 from . import chat_bp
 
 logger = logging.getLogger(__name__)
@@ -42,14 +42,14 @@ def handle_join(data):
 def handle_send_message(data):
     room_id = data['room_id']
     # nick_name = data['nick_name']
-    sender = request.sid
+    sender = current_user.name
     content = data['message']
     created_at = datetime.now(UTC)
 
     message = ChatMessage(
         room_id=room_id,
         # nick_name=nick_name,
-        sender=request.sid,
+        sender=sender,
         content=content,
         created_at=created_at
     )

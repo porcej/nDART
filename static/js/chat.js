@@ -5,7 +5,7 @@ const socket = io.connect('//' + document.domain + ':' + location.port + '/chat'
 const chatBox = document.getElementById('chat-box');
 const messageForm = document.getElementById('message-form');
 const messageInput = document.getElementById('message');
-const roomSelect = document.getElementById('room-select');
+// const roomSelect = document.getElementById('room-select');
 const sendButton = document.getElementById('send-button');
 
 // Get current room from localStorage or use default
@@ -44,14 +44,14 @@ socket.on('connect', () => {
 socket.on('previous_messages', (messages) => {
     chatBox.innerHTML = '';
     messages.forEach(message => {
-        addMessageToChatBox(message, message.nick_name === window.chatConfig.nick_name ? 'right' : 'left');
+        addMessageToChatBox(message, message.sender === window.chatConfig.sender ? 'right' : 'left');
     });
     scrollToBottom();
 });
 
 // Handle incoming messages
 socket.on('receive_message', (data) => {
-    addMessageToChatBox(data, data.nick_name === window.chatConfig.nick_name ? 'right' : 'left');
+    addMessageToChatBox(data, data.sender === window.chatConfig.sender ? 'right' : 'left');
     scrollToBottom();
 });
 

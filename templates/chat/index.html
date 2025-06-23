@@ -159,8 +159,20 @@
 <script>
     window.chatConfig = {
         nick_name: "{{ nick_name if nick_name is not none else ''}}",
-        sender: "{{ current_user.name if current_user is not none else ''}}"
+        sender: "{{ current_user.name if current_user is not none else ''}}",
     };
+
+    const roomSelect = document.getElementById('room-select');
+    const savedRoom = localStorage.getItem('currentRoomId');
+    
+    // Check if the saved room exists in the dropdown options
+    const roomExists = Array.from(roomSelect.options).some(option => option.value === savedRoom);
+    
+    if (roomExists) {
+        roomSelect.value = savedRoom;
+    } else {
+        localStorage.setItem('currentRoomId', roomSelect.value);
+    }
 </script>
 <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 {% endblock %}

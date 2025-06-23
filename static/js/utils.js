@@ -56,3 +56,21 @@ export function handlePreSubmit(e, data, action, openVals = null) {
         });
     }
 }
+
+// Build a filter drop down for a given element id, options, and column index
+export function buildFilterDropDown(elementId, options, columnIndex) {
+    const filterElement = document.getElementById(elementId);
+    if (filterElement) {
+        const filterOptions = prepareOptions(options);
+        filterOptions.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.label;
+            optionElement.textContent = option.label;
+            filterElement.appendChild(optionElement);
+        });
+        filterElement.addEventListener('change', function() {
+            const selectedValue = this.value;
+            eventsTable.column(columnIndex).search(selectedValue).draw();
+        });
+    }
+}
