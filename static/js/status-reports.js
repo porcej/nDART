@@ -61,7 +61,7 @@ const statusReportsEditor = new DataTable.Editor({
             label: 'Status',
             name: 'status_id',
             type: 'select',
-            options: window.ndart.station_status_options
+            options: prepareOptions('station_statuses')
         },
         {
             label: 'Notes',

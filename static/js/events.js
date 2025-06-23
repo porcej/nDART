@@ -1,4 +1,4 @@
-import { getCurrentTime, timeStringToDate, findLabel, pruneEmptyFields, prepareOptions, handlePreSubmit } from './utils.js';
+import { getCurrentTime, timeStringToDate, findLabel, prepareOptions, handlePreSubmit, buildFilterDropDown } from './utils.js';
 import { initSocketMessages } from './sio.js';
 
 const WARNTIME = 10; // in minutes
@@ -10,34 +10,9 @@ let eventsTable;
 let openEventsVals = null;
 const pendingEventIds = new Set();
 
-const reporterFilter = document.getElementById('reporterFilter');
-if (reporterFilter) {
-    const reporterOptions = prepareOptions('assignments');
-    reporterOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option.label;
-        optionElement.textContent = option.label;
-        reporterFilter.appendChild(optionElement);
-    });
-}
+buildFilterDropDown('reporterFilter', 'assignments', 3);
+buildFilterDropDown('agencyFilter', 'agencies', 5);
 
-const agencyFilter = document.getElementById('agencyFilter');
-if (agencyFilter) {
-    const agencyOptions = prepareOptions('agencies');
-    agencyOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option.label;
-        optionElement.textContent = option.label;
-        agencyFilter.appendChild(optionElement);
-    });
-}
-
-agencyFilter.addEventListener('change', function() {
-    const selectedAgency = this.value;
-    const colIndex = 5;
-    console.log(`selectedAgency: ${selectedAgency}`);
-    eventsTable.column(colIndex).search(selectedAgency).draw();
-});
 
 const resolvedRadioAll = document.getElementById('resolvedRadioAll');
 if (resolvedRadioAll) {
@@ -260,18 +235,6 @@ eventsTable = new DataTable('#events-table', {
         }
     }
 });
-
-// Activate an inline edit on click of a table cell
-// eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {
-//     eventsEditor.bubble(this, {
-//         buttons: {
-//             label: '&gt;',
-//             fn: function () {
-//                 this.submit();
-//             }
-//         }
-//     });
-// });
 
 // Activate the bubble editor on click of a table cell
 eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {
