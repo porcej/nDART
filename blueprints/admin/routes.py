@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, Role, ChatRoom, ChatMessage, StationStatus, Assignment, ObservationsCategory
+from models import User, Role, ChatRoom, Agency, StationStatus, Assignment, ObservationsCategory, Event, Observation, StatusReport
 from datetime import datetime, UTC
 from uuid import uuid4
 from . import admin_bp
@@ -26,6 +26,9 @@ def index():
     chat_rooms_count = ChatRoom.query.count()
     agencies_count = Agency.query.count()
     active_agencies = Agency.query.filter_by(enabled=True).count()
+    events_count = Event.query.count()
+    observations_count = Observation.query.count()
+    status_reports_count = StatusReport.query.count()
     
     return render_template('admin/index.html',
                          username=current_user.name,
@@ -39,4 +42,7 @@ def index():
                          active_statuses=active_statuses,
                          chat_rooms_count=chat_rooms_count,
                          agencies_count=agencies_count,
-                         active_agencies=active_agencies)
+                         active_agencies=active_agencies,
+                         events_count=events_count,
+                         observations_count=observations_count,
+                         status_reports_count=status_reports_count)
