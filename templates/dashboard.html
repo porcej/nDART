@@ -1,0 +1,79 @@
+{% extends "components/bs-base.html" %}
+{% set full_width = True %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main content column - 8 columns on large screens, full width on small screens -->
+    <div class="col-lg-8 col-md-1">
+        <h1>Events</h1>
+        <div class="btn-toolbar mb-3" role="toolbar" aria-label="Event filters">
+          <div class="btn-group me-2" role="group" aria-label="Reporter Filter">
+            <div class="input-group">
+              <div class="input-group-text">Reporter</div>
+              <select class="form-select" id="reporterFilter">
+                  <option value="">All Reporters</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-group me-2" role="group" aria-label="Agency Filter">
+            <div class="input-group">
+              <div class="input-group-text">Agency</div>
+              <select class="form-select" id="agencyFilter">
+                  <option value="">All Agencies</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-group me-2" role="group" aria-label="Progress filter">
+            <input type="radio" class="btn-check" name="btnradio" id="resolvedRadioAll" autocomplete="off" checked>
+            <label class="btn btn-outline-secondary" for="resolvedRadioAll">All</label>
+            <input type="radio" class="btn-check" name="btnradio" id="resolvedRadioResolved" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="resolvedRadioResolved">Resolved</label>
+            <input type="radio" class="btn-check" name="btnradio" id="resolvedRadioInProgress" autocomplete="off">
+            <label class="btn btn-outline-secondary" for="resolvedRadioInProgress">In Progress</label>
+          </div>
+        </div>
+        <table cellpadding="0" cellspacing="0" border="0" class="display table table-striped table-sm table-hover" id="events-table" width="100%">
+          <thead>
+            <tr>
+              <th rowspan="2"></th>
+              <th rowspan="2">Time</th>
+              <th rowspan="2">Bib #</th>
+              <th rowspan="2">Location</th>
+              <th rowspan="2">Reported<br>By</th>
+              <th colspan="4">Agency</th>
+              <th rowspan="2">Notes</th>
+            </tr>
+            <tr>
+              <th data-dt-order="disable"> </th>
+              <th>Notified</th>
+              <th>Arrival</th>
+              <th>Resolved</th>
+            </tr>
+          </thead>
+        </table>
+    </div>
+    
+    <!-- Sidebar column - 4 columns on large screens, full width on small screens -->
+    <div class="col-lg-4 col-md-12 ms-auto">
+        <h2>Observations</h2>
+        <table cellpadding="0" cellspacing="0" border="0" class="display table table-striped table-sm table-hover" id="observations-table" width="100%">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Bib #</th>
+                    <th>Loc</th>
+                    <th>Cat</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/events.js') }}" type="module"></script>
+    <script src="{{ url_for('static', filename='js/observations-side.js') }}" type="module"></script>
+{% endblock %}

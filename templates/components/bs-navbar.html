@@ -1,0 +1,22 @@
+<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.dashboard') }}"> Dashboard </a></li>
+<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.events') }}"> Events </a></li>
+<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.observations') }}"> Observations </a></li>
+<li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.status_reports') }}"> Status Reports </a></li>
+<li class="nav-item"><a class="nav-link" href="{{ url_for('chat_bp.chat') }}"> Chat </a></li>
+{% if current_user.is_admin %}
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Admin
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+            <li><a class="dropdown-item" href="{{ url_for('admin.index') }}">Admin Dashboard</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">Users</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.roles') }}">Roles</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.assignments') }}">Assignments</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.observations_categories') }}">Observations Categories</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.station_status') }}">Station Statuses</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.agencies') }}">Agencies</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.chat_rooms') }}">Chatrooms</a></li>
+        </ul>
+    </li>
+{% endif %}

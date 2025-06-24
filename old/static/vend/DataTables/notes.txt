@@ -1,0 +1,4 @@
+ *   https://datatables.net/download/#bs5/jq-3.7.0/moment-2.29.4/dt-2.3.0/e-2.4.2/b-3.2.3/date-1.5.5/r-3.0.4/sp-2.3.3/sl-3.0.0/sr-1.4.1
+ *
+ * Included libraries:
+ *   jQuery 3.7.0, Moment 2.29.4, DataTables 2.3.0, Editor 2.4.2, Buttons 3.2.3, DateTime 1.5.5, Responsive 3.0.4, SearchPanes 2.3.3, Select 3.0.0, StateRestore 1.4.1

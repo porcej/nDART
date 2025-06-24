@@ -1,0 +1,125 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Admin Dashboard{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Admin Dashboard</h1>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Users Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Users</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ users_count }}
+                    </div>
+                    <div class="text-muted mb-3">{{ active_users }} active</div>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-people me-2"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Roles Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Roles</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ roles_count }}
+                    </div>
+                    <div class="text-muted mb-3">&nbsp;</div>
+                    <a href="{{ url_for('admin.roles') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-shield-lock me-2"></i>Manage Roles
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignments Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Assignments</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ assignments_count }}
+                    </div>
+                    <div class="text-muted mb-3">&nbsp;</div>
+                    <a href="{{ url_for('admin.assignments') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-calendar-check me-2"></i>Manage Assignments
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Observations Categories Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Observations Categories</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ observations_categories_count }}
+                    </div>
+                    <div class="text-muted mb-3">&nbsp;</div>
+                    <a href="{{ url_for('admin.observations_categories') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-tags me-2"></i>Manage Categories
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Station Status Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Station Status</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ station_statuses_count }}
+                    </div>
+                    <div class="text-muted mb-3">&nbsp;</div>
+                    <a href="{{ url_for('admin.station_status') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-building me-2"></i>Manage Status
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agencies Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Agencies</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ agencies_count }}
+                    </div>
+                    <div class="text-muted mb-3">{{ active_agencies }} active</div>
+                    <a href="{{ url_for('admin.agencies') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-building me-2"></i>Manage Agencies
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Rooms Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Chat Rooms</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ chat_rooms_count }}
+                    </div>
+                    <div class="text-muted mb-3">&nbsp;</div>
+                    <a href="{{ url_for('admin.chat_rooms') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-chat-dots me-2"></i>Manage Chat Rooms
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,116 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}Station Status Management{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2 mb-0">Station Status Management</h1>
+    </div>
+
+    <div id="stationStatusTable" class="card shadow-sm"
+        data-api-url={{ url_for('admin.station_status') | tojson }}
+        data-export-url={{ url_for('admin.export_station_status') | tojson }}
+        data-import-url={{ url_for('admin.import_station_status') | tojson }}
+        data-remove-all-url={{ url_for('admin.remove_all_station_status') | tojson }}>
+        <div class="card-body">
+            {% with form_name='Station Status', import_export=True, show_inactive=True, create_icon='bi-plus-circle' %}
+                {% include 'components/modals/admin_table_header.html' %}
+            {% endwith %}
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle status-table" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Sort Order</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status in station_statuses|sort(attribute='sort_order') %}
+                        <tr data-active="{{ status.enabled }}">
+                            <td>
+                                <span class="badge bg-primary fs-6">
+                                    {{ status.name }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if status.enabled else 'secondary' }}">
+                                    {{ 'Active' if status.enabled else 'Inactive' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ status.sort_order }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary edit-btn" data-id="{{ status.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-btn" data-id="{{ status.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Modal -->
+<div class="modal fade" id="stationStatusModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Create Station Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <form id="stationStatusForm">
+                <div class="modal-body">
+                    <input type="hidden" id="stationStatusId">
+                    
+                    <div class="mb-3">
+                        <label for="stationStatusName" class="form-label">Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="stationStatusName" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="stationStatusSortOrder" class="form-label">Sort Order <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="stationStatusSortOrder" required min="0" value="0">
+                        <div class="form-text">Lower numbers appear first in the list</div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="stationStatusEnabled" name="enabled" checked>
+                        <label class="form-check-label" for="stationStatusEnabled">Active</label>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% with form_name='Station Status', form_action=url_for('admin.import_station_status') %}
+    {% include 'components/modals/import_file.html' %}
+{% endwith %}
+{% with item_name='Station Status' %}
+    {% include 'components/modals/delete_item.html' %}
+{% endwith %}
+{% include 'components/toast.html' %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/admin/station_status.js') }}" type="module"></script>
+{% endblock %} 

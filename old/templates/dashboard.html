@@ -1,0 +1,53 @@
+{% extends "components/bs-base.html" %}
+{% set full_width = True %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Main content column - 8 columns on large screens, full width on small screens -->
+    <div class="col-lg-8 col-md-1">
+        <h1>Events</h1>
+        <table cellpadding="0" cellspacing="0" border="0" class="display table table-striped table-sm table-hover" id="events-table" width="100%">
+          <thead>
+            <tr>
+              <th rowspan="2"></th>
+              <th rowspan="2">Time</th>
+              <th rowspan="2">Bib #</th>
+              <th rowspan="2">Location</th>
+              <th rowspan="2">Reported<br>By</th>
+              <th colspan="4">Agency</th>
+              <th rowspan="2">Notes</th>
+            </tr>
+            <tr>
+              <th data-dt-order="disable"> </th>
+              <th>Notified</th>
+              <th>Arrival</th>
+              <th>Resolved</th>
+            </tr>
+          </thead>
+        </table>
+    </div>
+    
+    <!-- Sidebar column - 4 columns on large screens, full width on small screens -->
+    <div class="col-lg-4 col-md-12 ms-auto">
+        <h2>Observations</h2>
+        <table cellpadding="0" cellspacing="0" border="0" class="display table table-striped table-sm table-hover" id="observations-table" width="100%">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Bib #</th>
+                    <th>Loc</th>
+                    <th>Cat</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/events.js') }}" type="module"></script>
+    <script src="{{ url_for('static', filename='js/observations-side.js') }}" type="module"></script>
+{% endblock %}

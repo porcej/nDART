@@ -1,0 +1,13 @@
+{% extends "components/bs-base.html" %}
+
+{% block title %}{% block admin_title %} | Admin {% endblock %}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vend/bootstrap-icons/1.3.0/boostrap-icons.css') }}">
+{% block admin_head %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+{% block admin_content %}{% endblock %}
+{% endblock %} 

@@ -1,0 +1,59 @@
+<!-- Import Modal -->
+<!-- <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import {{ form_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Select Excel File</label>
+                        <input type="file" class="form-control" id="importFile" name="import-file" accept=".xlsx" required>
+                        <div class="form-text">Only .xlsx files are supported</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="importBtn">Import</button>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import {{ form_name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="importForm" method="POST" action="{{ form_action }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Excel File</label>
+                        <input type="file" class="form-control" id="importFile" name="import-file" accept=".xlsx" required>
+                    </div>
+                {% if additional_fields %}
+                    {% for field in additional_fields %}
+                    <div class="mb-3">
+                        <label for="{{ field.id }}" class="form-label">{{ field.label }}</label>
+                        <input type="{{ field.type }}" class="form-control" id="{{ field.id }}" name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                        {% if field.help_text %}
+                        <div class="form-text">{{ field.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

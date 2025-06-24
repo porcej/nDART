@@ -1,0 +1,39 @@
+{% set create_icon = create_icon|default('bi-plus-square') %}
+
+
+<!-- Admin Table Header -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <!-- Search -->
+    <div class="input-group admin-table-search">
+        <span class="input-group-text">
+            <i class="bi bi-search"></i>
+        </span>
+        <input type="text" class="form-control" id="searchInput" placeholder="Search {{ form_name | lower }}..." aria-label="Search {{ form_name }}">
+    </div>
+
+    <!-- Inactive Users Toggle -->
+     {% if show_inactive %}
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="showInactive">
+            <label class="form-check-label" for="showInactive">Show Inactive {{ form_name }}</label>
+        </div>
+    {% endif %}
+
+    <!-- Import/Export Buttons -->
+    <div class="btn-group ms-auto">
+        <button type="button" class="btn btn-outline-primary" id="exportBtn">
+            <i class="bi bi-download me-2"></i>Export
+        </button>
+        <button type="button" class="btn btn-outline-success" id="importBtn">
+            <i class="bi bi-upload me-2"></i>Import
+        </button>
+        <button type="button" class="btn btn-outline-danger" id="removeAllBtn">
+            <i class="bi bi-trash me-2"></i>Remove All
+        </button>
+    </div>
+
+    <!-- Create User Button -->
+    <button type="button" class="btn btn-success" id="createBtn">
+        <i class="bi {{ create_icon }} me-2"></i>Create {{ form_name }}
+    </button>
+</div>
