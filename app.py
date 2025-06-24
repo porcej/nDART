@@ -95,6 +95,30 @@ def create_app(config_class=Config):
 
 def init_app(app):
 
+
+
+
+    # *====================================================================*
+    #         ADMIN
+    # *====================================================================*
+    # Route for uploading xlsx file and removing all rows
+    @app.route('/admin', methods=['GET', 'POST'])
+    @login_required
+    def admin():
+        if not current_user.is_admin:
+            return redirect(url_for('events'))
+        if request.method == 'POST':
+            if 'remove-events' in request.form:
+                remove_all_rows('events')
+                return f'All events removed.'
+            elif 'remove-observations' in request.form:
+                remove_all_rows('observations')
+                return f'All observations removed.'
+            else:
+                return 'I am not a teapot.'
+
+        return render_template('admin.html', active_page='admin', is_admin=current_user.is_admin)
+
     # *--------------------------------------------------------------------*
     #         End User Routes (Web Pages)
     # *--------------------------------------------------------------------*
