@@ -95,63 +95,6 @@ def create_app(config_class=Config):
 
 def init_app(app):
 
-
-
-
-    # # *--------------------------------------------------------------------*
-    # #         Authentication & User Management
-    # # *--------------------------------------------------------------------*
-    # @app.route("/login", methods=["GET", "POST"])
-    # def login():
-    #     if current_user.is_authenticated:
-    #         print("Current user is at login page but is authenticated", file=sys.stderr)
-    #         return redirect(url_for('app_index'))
-
-    #     username = request.form.get('username')
-    #     password = request.form.get('password')
-
-    #     if username is not None:
-    #         username = username.lower()
-
-    #     # If a post request was made, find the user by 
-    #     # filtering for the username
-    #     if request.method == "POST":
-    #         if username in app.config['USER_ACCOUNTS'].keys():
-    #             if password == app.config['USER_ACCOUNTS'][username]['password']:
-    #                 user = app.config['USERS'][app.config['USER_ACCOUNTS'][username]['id']]
-    #                 login_user(user, remember='y')
-    #                 return redirect(url_for('app_index'))
-    #         flash('Invalid username or password', 'error')
-    #         # Redirect the user back to the home
-    #         # (we'll create the home route in a moment)
-    #     return render_template("login.html", aid_stations=app.config['USER_ACCOUNTS'].keys())
-
-    # @app.route('/logout')
-    # def logout():
-    #     logout_user()
-    #     return redirect(url_for('login'))
-
-    # *====================================================================*
-    #         ADMIN
-    # *====================================================================*
-    # Route for uploading xlsx file and removing all rows
-    @app.route('/admin', methods=['GET', 'POST'])
-    @login_required
-    def admin():
-        if not current_user.is_admin:
-            return redirect(url_for('events'))
-        if request.method == 'POST':
-            if 'remove-events' in request.form:
-                remove_all_rows('events')
-                return f'All events removed.'
-            elif 'remove-observations' in request.form:
-                remove_all_rows('observations')
-                return f'All observations removed.'
-            else:
-                return 'I am not a teapot.'
-
-        return render_template('admin.html', active_page='admin', is_admin=current_user.is_admin)
-
     # *--------------------------------------------------------------------*
     #         End User Routes (Web Pages)
     # *--------------------------------------------------------------------*

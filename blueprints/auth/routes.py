@@ -6,6 +6,7 @@ from . import auth_bp
 from models import User
 from extensions import db
 from urllib.parse import urlparse
+from sqlalchemy import func
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -44,8 +45,8 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        
-        user = User.query.filter_by(name=username, active=True).first()
+        username = username.lower() if username else None
+        user = User.query.filter(func.lower(User.name) == username, User.active == True).first()
         
         if user and user.check_password(password):
             # This is key: ensure login_user gets called correctly
