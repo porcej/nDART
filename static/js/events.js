@@ -10,6 +10,10 @@ let eventsTable;
 let openEventsVals = null;
 const pendingEventIds = new Set();
 
+// Cleanup timeout for pending IDs (safety net)
+const PENDING_CLEANUP_TIMEOUT = 30000; // 30 seconds
+const pendingTimeouts = new Map();
+
 buildFilterDropDown('reporterFilter', 'assignments', 3);
 buildFilterDropDown('agencyFilter', 'agencies', 5);
 
@@ -251,10 +255,63 @@ eventsEditor.on('postCreate', function (e, json, data) {
     }
 });
 
+// Clean up on successful edit
+eventsEditor.on('postEdit', function (e, json, data) {
+    if (data && data.id) {
+        pendingEventIds.delete(data.id);
+        clearPendingTimeout(data.id);
+    }
+});
+
+// Clean up on successful remove
+eventsEditor.on('postRemove', function (e, json, data) {
+    if (data && data.id) {
+        pendingEventIds.delete(data.id);
+        clearPendingTimeout(data.id);
+    }
+});
+
+// Clean up on editor close (cancelled operations)
+eventsEditor.on('close', function() {
+    if (openEventsVals && openEventsVals.id) {
+        pendingEventIds.delete(openEventsVals.id);
+        clearPendingTimeout(openEventsVals.id);
+    }
+    openEventsVals = null;
+});
+
+// Clean up on errors
+eventsEditor.on('error', function(e, json, data) {
+    if (openEventsVals && openEventsVals.id) {
+        pendingEventIds.delete(openEventsVals.id);
+        clearPendingTimeout(openEventsVals.id);
+    }
+    openEventsVals = null;
+});
+
+// Helper function to clear pending timeout
+function clearPendingTimeout(id) {
+    if (pendingTimeouts.has(id)) {
+        clearTimeout(pendingTimeouts.get(id));
+        pendingTimeouts.delete(id);
+    }
+}
+
 // Use the shared preSubmit handler
 eventsEditor.on('preSubmit', function(e, data, action) {
     handlePreSubmit(e, data, action, openEventsVals);
-    pendingEventIds.add(openEventsVals.id);
+    if (openEventsVals && openEventsVals.id) {
+        pendingEventIds.add(openEventsVals.id);
+        
+        // Set timeout to clean up if operation doesn't complete
+        const timeoutId = setTimeout(() => {
+            pendingEventIds.delete(openEventsVals.id);
+            pendingTimeouts.delete(openEventsVals.id);
+            console.warn(`Cleaned up pending event ID ${openEventsVals.id} due to timeout`);
+        }, PENDING_CLEANUP_TIMEOUT);
+        
+        pendingTimeouts.set(openEventsVals.id, timeoutId);
+    }
 });
 
 initSocketMessages(eventsTable, DATA_TYPE, pendingEventIds);
