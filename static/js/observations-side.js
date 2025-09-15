@@ -60,13 +60,13 @@ const observationsEditor = new DataTable.Editor({
         {
             label: 'Location',
             name: 'reporter_id',
-            type: 'select',
+            type: 'selectize',
             options: prepareOptions('assignments')
         },
         {
             label: 'Category',
             name: 'category_id',
-            type: 'select',
+            type: 'selectize',
             options: prepareOptions('observations_categories')
         }
     ]

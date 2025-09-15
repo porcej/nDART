@@ -98,14 +98,20 @@ const eventsEditor = new DataTable.Editor({
         {
             label: 'Reported By',
             name: 'reporter_id',
-            type: 'select',
+            type: 'selectize',
             def: '',
-            options: prepareOptions('assignments')
+            options: prepareOptions('assignments'),
+            opts: {
+                sortField: {
+                    field: 'label',
+                    direction: 'asc'
+                }
+            },
         },
         {
             label: 'Agency',
             name: 'agency_id',
-            type: 'select',
+            type: 'selectize',
             def: '',
             options: prepareOptions('agencies')
         },

@@ -54,13 +54,20 @@ const statusReportsEditor = new DataTable.Editor({
         {
             label: 'Reported By',
             name: 'reporter_id',
-            type: 'select',
-            options: prepareOptions('assignments')
+            type: 'selectize',
+            def: '',
+            options: prepareOptions('assignments'),
+            opts: {
+                sortField: {
+                    field: 'label',
+                    direction: 'asc'
+                }
+            },
         },
         {
             label: 'Status',
             name: 'status_id',
-            type: 'select',
+            type: 'selectize',
             options: prepareOptions('station_statuses')
         },
         {

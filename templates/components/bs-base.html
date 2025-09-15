@@ -7,7 +7,12 @@
 
     <link href="{{ url_for('static', filename='vend/bootstrap/5.3.2/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='vend/DataTables/datatables.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='vend/selectize.js/0.15.2/css/selectize.bootstrap5.css')}}" rel="stylesheet" type="text/css">
+    <!-- <link href="{{ url_for('static', filename='vend/selectize.js/0.15.2/scss/selectize.bootstrap5.scss')}}" rel="stylesheet" type="text/css"> -->
+    <link href="{{ url_for('static', filename='css/selectize-themes.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ url_for('static', filename='vend/DataTables/plug-ins/editor.selectize.css')}}" rel="stylesheet" type="text/css">
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet" type="text/css">
+ 
 
     
     {# Block for page-specific CSS #}
@@ -71,6 +76,9 @@
     <script src="{{ url_for('static', filename='vend/moment/moment.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/jquery/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/DataTables/datatables.js') }}"></script>
+    <script src="{{ url_for('static', filename='vend/selectize.js/0.15.2/js/selectize.min.js')}}"></script>
+
+    <script src="{{ url_for('static', filename='vend/DataTables/plug-ins/editor.selectize.js')}}"></script>
     <script src="{{ url_for('static', filename='vend/socket.io/4.4.1/socket.io.min.js')}}"></script>
     {% block scripts %}{% endblock %}
 </body>
