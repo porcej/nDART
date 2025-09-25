@@ -99,9 +99,21 @@ const eventsEditor = new DataTable.Editor({
             label: 'Reported By',
             name: 'reporter_id',
             type: 'selectize',
-            def: '',
+            def: null,
             options: prepareOptions('assignments'),
             opts: {
+                valueField: 'value',
+                labelField: 'label',
+                searchField: ['label'],         // ← ensure searching works
+                create: false,
+                persist: false,                          // ← don’t cache across opens
+                preload: true,
+                openOnFocus: true,
+                dropdownParent: 'body',                  // ← avoids clipping/focus issues
+                onDropdownOpen() {                       // ← clear any stale query
+                  this.setTextboxValue('');
+                  this.refreshOptions(false);
+                },
                 sortField: {
                     field: 'label',
                     direction: 'asc'
@@ -112,8 +124,26 @@ const eventsEditor = new DataTable.Editor({
             label: 'Agency',
             name: 'agency_id',
             type: 'selectize',
-            def: '',
-            options: prepareOptions('agencies')
+            def: null,
+            options: prepareOptions('agencies'),
+            opts: {
+                valueField: 'value',
+                labelField: 'label',
+                searchField: ['label'],         // ← ensure searching works
+                create: false,
+                persist: false,                          // ← don’t cache across opens
+                preload: true,
+                openOnFocus: true,
+                dropdownParent: 'body',                  // ← avoids clipping/focus issues
+                onDropdownOpen() {                       // ← clear any stale query
+                  this.setTextboxValue('');
+                  this.refreshOptions(false);
+                },
+                sortField: {
+                    field: 'label',
+                    direction: 'asc'
+                }
+            },
         },
         {
             label: 'Agency Notified',

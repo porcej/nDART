@@ -61,13 +61,51 @@ const observationsEditor = new DataTable.Editor({
             label: 'Location',
             name: 'reporter_id',
             type: 'selectize',
-            options: prepareOptions('assignments')
+            def: null,
+            options: prepareOptions('assignments'),
+            opts: {
+                valueField: 'value',
+                labelField: 'label',
+                searchField: ['label'],         // ← ensure searching works
+                create: false,
+                persist: false,                          // ← don’t cache across opens
+                preload: true,
+                openOnFocus: true,
+                dropdownParent: 'body',                  // ← avoids clipping/focus issues
+                onDropdownOpen() {                       // ← clear any stale query
+                  this.setTextboxValue('');
+                  this.refreshOptions(false);
+                },
+                sortField: {
+                    field: 'label',
+                    direction: 'asc'
+                }
+            }
         },
         {
             label: 'Category',
             name: 'category_id',
             type: 'selectize',
-            options: prepareOptions('observations_categories')
+            def: null,
+            options: prepareOptions('observations_categories'),
+            opts: {
+                valueField: 'value',
+                labelField: 'label',
+                searchField: ['label'],         // ← ensure searching works
+                create: false,
+                persist: false,                          // ← don’t cache across opens
+                preload: true,
+                openOnFocus: true,
+                dropdownParent: 'body',                  // ← avoids clipping/focus issues
+                onDropdownOpen() {                       // ← clear any stale query
+                  this.setTextboxValue('');
+                  this.refreshOptions(false);
+                },
+                sortField: {
+                    field: 'label',
+                    direction: 'asc'
+                }
+            }
         }
     ]
 });
