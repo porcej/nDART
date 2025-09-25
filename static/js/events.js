@@ -283,6 +283,9 @@ eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {
 
 eventsEditor.on('open', function() {
     openEventsVals = eventsEditor.get();
+    const $wrap = $(eventsEditor.displayNode());
+    if ($wrap.find('.key-hint').length) return;
+    $('.DTE_Footer').prepend('<div class="key-hint">Tip: Use <kbd>Tab</kbd> to move between fields. Press <kbd>Enter</kbd> to submit.</div>');
 });
 
 eventsEditor.on('postCreate', function (e, json, data) {
