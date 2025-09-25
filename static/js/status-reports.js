@@ -55,9 +55,21 @@ const statusReportsEditor = new DataTable.Editor({
             label: 'Reported By',
             name: 'reporter_id',
             type: 'selectize',
-            def: '',
+            def: null,
             options: prepareOptions('assignments'),
             opts: {
+                valueField: 'value',
+                labelField: 'label',
+                searchField: ['label'],         // ← ensure searching works
+                create: false,
+                persist: false,                          // ← don’t cache across opens
+                preload: true,
+                openOnFocus: true,
+                dropdownParent: 'body',                  // ← avoids clipping/focus issues
+                onDropdownOpen() {                       // ← clear any stale query
+                  this.setTextboxValue('');
+                  this.refreshOptions(false);
+                },
                 sortField: {
                     field: 'label',
                     direction: 'asc'
@@ -68,7 +80,26 @@ const statusReportsEditor = new DataTable.Editor({
             label: 'Status',
             name: 'status_id',
             type: 'selectize',
-            options: prepareOptions('station_statuses')
+            def: null,
+            options: prepareOptions('station_statuses'),
+            opts: {
+                valueField: 'value',
+                labelField: 'label',
+                searchField: ['label'],         // ← ensure searching works
+                create: false,
+                persist: false,                          // ← don’t cache across opens
+                preload: true,
+                openOnFocus: true,
+                dropdownParent: 'body',                  // ← avoids clipping/focus issues
+                onDropdownOpen() {                       // ← clear any stale query
+                  this.setTextboxValue('');
+                  this.refreshOptions(false);
+                },
+                sortField: {
+                    field: 'label',
+                    direction: 'asc'
+                }
+            },
         },
         {
             label: 'Notes',
@@ -135,6 +166,9 @@ statusReportsTable = new DataTable('#status-reports-table', {
 
 statusReportsEditor.on('open', function() {
     openStatusReportVals = statusReportsEditor.get();
+    const $wrap = $(statusReportsEditor.displayNode());
+    if ($wrap.find('.key-hint').length) return;
+    $('.DTE_Footer').prepend('<div class="key-hint">Tip: Use <kbd>Tab</kbd> to move between fields. Press <kbd>Enter</kbd> to submit.</div>');
 });
 
 statusReportsEditor.on('postCreate', function(e, data, action) {

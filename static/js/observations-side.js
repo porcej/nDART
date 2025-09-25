@@ -163,6 +163,9 @@ observationsTable = new DataTable('#observations-table', {
 
 observationsEditor.on('open', function() {
     openObservationsVals = observationsEditor.get();
+    const $wrap = $(observationsEditor.displayNode());
+    if ($wrap.find('.key-hint').length) return;
+    $('.DTE_Footer').prepend('<div class="key-hint">Tip: Use <kbd>Tab</kbd> to move between fields. Press <kbd>Enter</kbd> to submit.</div>');
 });
 
 observationsEditor.on('postCreate', function (e, json, data) {
