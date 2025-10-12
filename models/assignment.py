@@ -8,6 +8,7 @@ class Assignment(db.Model):
     # Columns
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     name = db.Column(db.String(100), nullable=False)
+    short_code = db.Column(db.String(20), nullable=True)
     description = db.Column(db.String(200), nullable=True)
     sort_order = db.Column(db.Integer, default=0)
     enabled = db.Column(db.Boolean, default=True)
@@ -33,10 +34,15 @@ class Assignment(db.Model):
         return {
             'id': self.id,
             'name': self.name,
+            'short_code': self.short_code,
             'description': self.description,
             'sort_order': self.sort_order,
             'enabled': self.enabled,
         }
+    
+    def get_display_name(self):
+        """Get the display name (short_code if available, otherwise name)"""
+        return self.short_code if self.short_code else self.name
     
     def to_form_options(self):
         return {

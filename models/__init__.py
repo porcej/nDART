@@ -9,6 +9,9 @@ from .chat_room import ChatRoom
 from .chat import ChatMessage
 from .user import User
 from .role import Role
+from .app_settings import AppSettings
+from .staffer_aro_volunteer import StafferAROVolunteer
+from .staffer_assignment_mapping import StafferAssignmentMapping
 
 
 __all__ = [
@@ -22,5 +25,8 @@ __all__ = [
     'ChatRoom',
     'ChatMessage',
     'User',
-    'Role'
+    'Role',
+    'AppSettings',
+    'StafferAROVolunteer',
+    'StafferAssignmentMapping'
 ]

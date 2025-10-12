@@ -120,6 +120,38 @@
                 </div>
             </div>
         </div>
+
+        <!-- Settings Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Settings</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        <i class="bi bi-gear" style="font-size: 3rem;"></i>
+                    </div>
+                    <div class="text-muted mb-3">App Configuration</div>
+                    <a href="{{ url_for('admin.settings') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-sliders me-2"></i>Manage Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Staffer Mappings Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Staffer Mappings</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        <i class="bi bi-diagram-3" style="font-size: 3rem;"></i>
+                    </div>
+                    <div class="text-muted mb-3">Assignment Mapping</div>
+                    <a href="{{ url_for('admin.staffer_mappings') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-arrow-left-right me-2"></i>Manage Mappings
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %} 

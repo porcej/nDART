@@ -1,9 +1,10 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
-from models import StatusReport
+from models import StatusReport, Assignment, StationStatus, AppSettings
 from extensions import db
 
 from .utils import send_status_report_notification, handle_date_fields
+from .staffer_api_service import send_status_report_to_staffer, update_status_report_in_staffer
 
 status_report_bp = Blueprint('status_report_bp', __name__, url_prefix='/status_reports')
 
@@ -23,6 +24,48 @@ def api_create_status_report():
         db.session.commit()
 
         send_status_report_notification('new_status_report', new_status_report.to_dict())
+
+        # Send to staffer API if configured
+        staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
+        if staffer_enabled.lower() == 'true':
+            try:
+                # Get additional data for the API call
+                reporter_data = None
+                status_data = None
+                
+                if new_status_report.reporter_id:
+                    reporter = Assignment.query.get(new_status_report.reporter_id)
+                    if reporter:
+                        reporter_data = {
+                            'id': reporter.id,
+                            'name': reporter.name if hasattr(reporter, 'name') else None,
+                        }
+                
+                if new_status_report.status_id:
+                    status = StationStatus.query.get(new_status_report.status_id)
+                    if status:
+                        status_data = {
+                            'id': status.id,
+                            'name': status.name if hasattr(status, 'name') else None,
+                        }
+                
+                # Prepare status report data
+                status_report_data = {
+                    'time': new_status_report.time,
+                    'reporter_id': new_status_report.reporter_id,
+                    'status_id': new_status_report.status_id,
+                    'comment': new_status_report.comment
+                }
+                
+                result = send_status_report_to_staffer(status_report_data, reporter_data, status_data)
+                
+                # Log the result but don't fail the main operation
+                if not result.get('success'):
+                    print(f"Warning: Failed to send status report to staffer API: {result.get('error')}")
+                    
+            except Exception as staffer_error:
+                # Log the error but don't fail the main operation
+                print(f"Warning: Exception while sending to staffer API: {str(staffer_error)}")
 
         return jsonify({
             'data': [new_status_report.to_dict()]
@@ -79,6 +122,48 @@ def api_update_status_report(status_report_id):
         db.session.commit()
 
         send_status_report_notification('edit_status_report', status_report.to_dict())
+
+        # Update in staffer API if configured
+        staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
+        if staffer_enabled.lower() == 'true':
+            try:
+                # Get additional data for the API call
+                reporter_data = None
+                status_data = None
+                
+                if status_report.reporter_id:
+                    reporter = Assignment.query.get(status_report.reporter_id)
+                    if reporter:
+                        reporter_data = {
+                            'id': reporter.id,
+                            'name': reporter.name if hasattr(reporter, 'name') else None,
+                        }
+                
+                if status_report.status_id:
+                    status = StationStatus.query.get(status_report.status_id)
+                    if status:
+                        status_data = {
+                            'id': status.id,
+                            'name': status.name if hasattr(status, 'name') else None,
+                        }
+                
+                # Prepare status report data
+                status_report_data = {
+                    'time': status_report.time,
+                    'reporter_id': status_report.reporter_id,
+                    'status_id': status_report.status_id,
+                    'comment': status_report.comment
+                }
+                
+                result = update_status_report_in_staffer(status_report_id, status_report_data, reporter_data, status_data)
+                
+                # Log the result but don't fail the main operation
+                if not result.get('success'):
+                    print(f"Warning: Failed to update status report in staffer API: {result.get('error')}")
+                    
+            except Exception as staffer_error:
+                # Log the error but don't fail the main operation
+                print(f"Warning: Exception while updating in staffer API: {str(staffer_error)}")
 
         return jsonify({
             'data': [status_report.to_dict()]
