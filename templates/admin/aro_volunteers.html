@@ -1,0 +1,144 @@
+{% extends "admin/admin_base.html" %}
+
+{% block admin_title %}ARO Volunteers{% endblock %}
+
+{% block admin_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vend/DataTables/datatables.min.css') }}">
+<style>
+    .no-assignment {
+        color: #dc3545;
+        font-style: italic;
+    }
+    .table-responsive {
+        max-height: 80vh;
+    }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">ARO Volunteers</h1>
+            <p class="text-muted">View all volunteers imported from the staffer database</p>
+        </div>
+        <a href="{{ url_for('admin.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">Volunteer Directory</h5>
+                    <small class="text-muted">Total: {{ volunteers|length }} volunteers</small>
+                </div>
+                <a href="{{ url_for('admin.settings') }}#sync-volunteers" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-repeat me-1"></i>Refresh from Staffer
+                </a>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="volunteersTable" class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>nDART Assignment</th>
+                            <th>Staffer Assignment</th>
+                            <th>Callsign</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data loaded via AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>About this data:</strong>
+        <ul class="mb-0 mt-2">
+            <li><strong>nDART Assignment:</strong> The assignment mapped in your system (can be manually overridden in Staffer Mappings).</li>
+            <li><strong>Staffer Assignment:</strong> The original assignment name from the ARO staffer database.</li>
+            <li><strong>Callsign:</strong> The volunteer's unique radio callsign identifier.</li>
+            <li>Click <a href="{{ url_for('admin.settings') }}">Settings</a> to import/refresh volunteer data from the staffer database.</li>
+            <li>Click <a href="{{ url_for('admin.staffer_mappings') }}">Staffer Mappings</a> to configure how assignments are mapped.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vend/DataTables/datatables.min.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable with AJAX data source
+    const volunteersTable = new DataTable('#volunteersTable', {
+        ajax: {
+            url: '/admin/aro-volunteers/data',
+            dataSrc: 'data'
+        },
+        columns: [
+            {
+                data: 'assignment_name',
+                render: function(data, type, row) {
+                    if (!data) {
+                        return '<span class="no-assignment">Not mapped</span>';
+                    }
+                    return `<strong>${data}</strong>`;
+                }
+            },
+            {
+                data: null,
+                render: function(data, type, row) {
+                    const parts = [];
+                    if (row.staffer_assignment_name) {
+                        parts.push(row.staffer_assignment_name);
+                    }
+                    if (row.staffer_assignment_code) {
+                        parts.push(`<small class="text-muted">(${row.staffer_assignment_code})</small>`);
+                    }
+                    return parts.length > 0 ? parts.join(' ') : '<span class="text-muted">-</span>';
+                }
+            },
+            {
+                data: 'callsign',
+                render: function(data) {
+                    return `<strong class="text-primary">${data}</strong>`;
+                }
+            },
+            { data: 'name' },
+            {
+                data: 'email',
+                render: function(data) {
+                    return data ? `<a href="mailto:${data}">${data}</a>` : '-';
+                }
+            },
+            {
+                data: 'phone_number',
+                render: function(data) {
+                    return data ? `<a href="tel:${data}">${data}</a>` : '-';
+                }
+            }
+        ],
+        order: [[0, 'asc'], [2, 'asc']], // Sort by assignment, then callsign
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        language: {
+            emptyTable: "No volunteers found. Import volunteer data from Settings.",
+            search: "Search volunteers:",
+            info: "Showing _START_ to _END_ of _TOTAL_ volunteers",
+            infoEmpty: "No volunteers to display",
+            infoFiltered: "(filtered from _MAX_ total volunteers)"
+        },
+        responsive: true
+    });
+});
+</script>
+{% endblock %}
+

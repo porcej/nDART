@@ -645,6 +645,7 @@ def sync_aro_volunteers_from_staffer():
                 StafferAROVolunteer.update_or_create_by_callsign(
                     callsign=callsign,
                     assignment_id=assignment_id,
+                    staffer_assignment=assignment_name,  # Store the original assignment from staffer
                     short_code=assignment_short_code,
                     email=email,
                     phone_number=phone_number,

@@ -8,6 +8,7 @@ class StafferAROVolunteer(db.Model):
     # Columns
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     assignment_id = db.Column(db.String(36), db.ForeignKey('assignments.id'), nullable=True)
+    staffer_assignment = db.Column(db.String(200), nullable=True)  # Original assignment name from staffer
     short_code = db.Column(db.String(20), nullable=True)
     callsign = db.Column(db.String(50), nullable=False)  # Callsign is unique identifier
     email = db.Column(db.String(120), nullable=True)
@@ -29,6 +30,7 @@ class StafferAROVolunteer(db.Model):
         return {
             'id': self.id,
             'assignment_id': self.assignment_id,
+            'staffer_assignment': self.staffer_assignment,
             'short_code': self.short_code,
             'callsign': self.callsign,
             'email': self.email,
@@ -42,7 +44,7 @@ class StafferAROVolunteer(db.Model):
         return StafferAROVolunteer.query.filter_by(assignment_id=assignment_id).first()
     
     @staticmethod
-    def update_or_create_by_callsign(callsign, assignment_id=None, short_code=None, email=None, phone_number=None, name=None):
+    def update_or_create_by_callsign(callsign, assignment_id=None, staffer_assignment=None, short_code=None, email=None, phone_number=None, name=None):
         """Update existing or create new staffer volunteer mapping by callsign"""
         volunteer = StafferAROVolunteer.query.filter_by(callsign=callsign).first()
         
@@ -50,6 +52,8 @@ class StafferAROVolunteer(db.Model):
             # Update existing
             if assignment_id is not None:
                 volunteer.assignment_id = assignment_id
+            if staffer_assignment is not None:
+                volunteer.staffer_assignment = staffer_assignment
             if short_code is not None:
                 volunteer.short_code = short_code
             if email is not None:
@@ -62,6 +66,7 @@ class StafferAROVolunteer(db.Model):
             # Create new
             volunteer = StafferAROVolunteer(
                 assignment_id=assignment_id,
+                staffer_assignment=staffer_assignment,
                 short_code=short_code,
                 callsign=callsign,
                 email=email,
@@ -74,11 +79,12 @@ class StafferAROVolunteer(db.Model):
         return volunteer
     
     @staticmethod
-    def update_or_create(assignment_id, short_code=None, callsign=None, email=None, phone_number=None, name=None):
+    def update_or_create(assignment_id, staffer_assignment=None, short_code=None, callsign=None, email=None, phone_number=None, name=None):
         """Update existing or create new staffer volunteer mapping - deprecated, use update_or_create_by_callsign"""
         return StafferAROVolunteer.update_or_create_by_callsign(
             callsign=callsign,
             assignment_id=assignment_id,
+            staffer_assignment=staffer_assignment,
             short_code=short_code,
             email=email,
             phone_number=phone_number,
