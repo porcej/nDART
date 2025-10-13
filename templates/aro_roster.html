@@ -1,0 +1,125 @@
+{% extends "components/bs-base.html" %}
+
+{% block title %}ARO Roster{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vend/DataTables/datatables.min.css') }}">
+<style>
+    .no-assignment {
+        color: #dc3545;
+        font-style: italic;
+    }
+    .table-responsive {
+        max-height: 85vh;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">ARO Volunteer Roster</h1>
+            <p class="text-muted">Complete directory of all ARO volunteers</p>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table id="rosterTable" class="table table-hover table-striped">
+                    <thead>
+                        <tr>
+                            <th>Assignment</th>
+                            <th>Staffer Assignment</th>
+                            <th>Callsign</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data loaded via AJAX -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>About this roster:</strong> This directory shows all ARO volunteers and their assignments for the event.
+        Contact information is provided for coordination purposes.
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='vend/DataTables/datatables.min.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTable with AJAX data source
+    const rosterTable = new DataTable('#rosterTable', {
+        ajax: {
+            url: '{{ url_for("main_bp.get_aro_roster_data") }}',
+            dataSrc: 'data'
+        },
+        columns: [
+            {
+                data: 'assignment_name',
+                render: function(data, type, row) {
+                    if (!data) {
+                        return '<span class="no-assignment">Not assigned</span>';
+                    }
+                    return `<strong>${data}</strong>`;
+                }
+            },
+            {
+                data: null,
+                render: function(data, type, row) {
+                    const parts = [];
+                    if (row.staffer_assignment) {
+                        parts.push(row.staffer_assignment);
+                    }
+                    if (row.short_code) {
+                        parts.push(`<small class="text-muted">(${row.short_code})</small>`);
+                    }
+                    return parts.length > 0 ? parts.join(' ') : '<span class="text-muted">-</span>';
+                }
+            },
+            {
+                data: 'callsign',
+                render: function(data) {
+                    return `<strong class="text-primary">${data}</strong>`;
+                }
+            },
+            { data: 'name' },
+            {
+                data: 'email',
+                render: function(data) {
+                    return data ? `<a href="mailto:${data}">${data}</a>` : '-';
+                }
+            },
+            {
+                data: 'phone_number',
+                render: function(data) {
+                    return data ? `<a href="tel:${data}">${data}</a>` : '-';
+                }
+            }
+        ],
+        order: [[0, 'asc'], [2, 'asc']], // Sort by assignment, then callsign
+        pageLength: 25,
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+        language: {
+            emptyTable: "No volunteers in the roster yet.",
+            search: "Search roster:",
+            info: "Showing _START_ to _END_ of _TOTAL_ volunteers",
+            infoEmpty: "No volunteers to display",
+            infoFiltered: "(filtered from _MAX_ total volunteers)"
+        },
+        responsive: true
+    });
+});
+</script>
+{% endblock %}
+

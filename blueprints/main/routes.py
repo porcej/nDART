@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, abort, current_app
 from flask_login import login_required, current_user
-from models import Event, Observation, Assignment, Agency, ObservationsCategory, StationStatus
+from models import Event, Observation, Assignment, Agency, ObservationsCategory, StationStatus, StafferAROVolunteer
 from . import main_bp
 
 def get_form_options():
@@ -31,3 +31,37 @@ def observations():
 @login_required
 def status_reports():
     return render_template("status_reports.html", form_options=get_form_options())
+
+@main_bp.route('/aro-roster')
+@login_required
+def aro_roster():
+    """Display ARO volunteers roster (public view)."""
+    return render_template('aro_roster.html')
+
+@main_bp.route('/aro-roster/data', methods=['GET'])
+@login_required
+def get_aro_roster_data():
+    """Get ARO volunteers data as JSON for DataTables."""
+    try:
+        volunteers = StafferAROVolunteer.query.all()
+        
+        data = []
+        for volunteer in volunteers:
+            data.append({
+                'id': volunteer.id,
+                'assignment_name': volunteer.assignment.name if volunteer.assignment else '',
+                'assignment_id': volunteer.assignment_id,
+                'staffer_assignment': volunteer.staffer_assignment or '',
+                'short_code': volunteer.short_code or '',
+                'callsign': volunteer.callsign,
+                'name': volunteer.name or '',
+                'email': volunteer.email or '',
+                'phone_number': volunteer.phone_number or ''
+            })
+        
+        return jsonify({
+            'data': data
+        })
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
