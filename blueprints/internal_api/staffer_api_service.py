@@ -613,6 +613,17 @@ def sync_aro_volunteers_from_staffer():
                 email = volunteer.get('email')
                 phone_number = volunteer.get('mobile_phone_number')
                 name = volunteer.get('name')
+                status = volunteer.get('status')
+                status_timestamp_str = volunteer.get('status_timestamp')
+                
+                # Parse status timestamp if present
+                status_timestamp = None
+                if status_timestamp_str:
+                    try:
+                        from dateutil import parser
+                        status_timestamp = parser.parse(status_timestamp_str)
+                    except:
+                        pass
                 
                 # Skip if no callsign (required field)
                 if not callsign:
@@ -662,7 +673,9 @@ def sync_aro_volunteers_from_staffer():
                     short_code=assignment_short_code,
                     email=email,
                     phone_number=phone_number,
-                    name=name
+                    name=name,
+                    status=status,
+                    status_timestamp=status_timestamp
                 )
                 
                 synced_count += 1

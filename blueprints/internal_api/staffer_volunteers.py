@@ -57,8 +57,12 @@ def api_get_all_volunteers():
 def api_checkin_volunteer():
     """
     Check in a volunteer to the staffer database by updating their status
+    Also updates the local nDART volunteer record
     """
     try:
+        from datetime import datetime, UTC
+        from extensions import db
+        
         data = request.get_json()
         callsign = data.get('callsign')
         status = data.get('status')
@@ -66,26 +70,33 @@ def api_checkin_volunteer():
         if not callsign or not status:
             return jsonify({'error': 'Callsign and status are required'}), 400
         
+        # Update local volunteer record first
+        volunteer = StafferAROVolunteer.query.filter_by(callsign=callsign).first()
+        if volunteer:
+            volunteer.status = status
+            volunteer.status_timestamp = datetime.now(UTC)
+            db.session.commit()
+        
         # Check if staffer API is enabled
         staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
         if staffer_enabled.lower() != 'true':
-            return jsonify({'success': 'Staffer API integration is disabled'}), 200
+            return jsonify({'success': f'Updated local status for {callsign} (Staffer API integration is disabled)'}), 200
         
-        # Use the centralized service function
+        # Use the centralized service function to update staffer
         result = checkin_volunteer_to_staffer(callsign, status)
         
         if result['success']:
             return jsonify({
-                'success': result['message']
+                'success': f'Updated status for {callsign} in both nDART and staffer database'
             })
         else:
             return jsonify({
-                'error': result['error'],
-                'warning': f'Status report saved but staffer update failed for {callsign}'
-            }), 400
+                'success': f'Updated local status for {callsign}',
+                'warning': f'Staffer update failed: {result["error"]}'
+            }), 200  # Still return 200 since local update succeeded
     
     except Exception as e:
         return jsonify({
             'error': str(e),
-            'warning': 'Status report saved but staffer update failed'
+            'warning': 'Status report saved but volunteer status update failed'
         }), 500

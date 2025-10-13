@@ -56,7 +56,9 @@ def get_aro_roster_data():
                 'callsign': volunteer.callsign,
                 'name': volunteer.name or '',
                 'email': volunteer.email or '',
-                'phone_number': volunteer.phone_number or ''
+                'phone_number': volunteer.phone_number or '',
+                'status': volunteer.status or '',
+                'status_timestamp': volunteer.status_timestamp.strftime('%Y-%m-%d %H:%M') if volunteer.status_timestamp else ''
             })
         
         return jsonify({

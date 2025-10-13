@@ -12,6 +12,10 @@
     .table-responsive {
         max-height: 85vh;
     }
+    .btn-update-status {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+    }
 </style>
 {% endblock %}
 
@@ -34,8 +38,10 @@
                             <th>Staffer Assignment</th>
                             <th>Callsign</th>
                             <th>Name</th>
+                            <th>Status</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -49,7 +55,57 @@
     <div class="alert alert-info mt-4">
         <i class="bi bi-info-circle me-2"></i>
         <strong>About this roster:</strong> This directory shows all ARO volunteers and their assignments for the event.
-        Contact information is provided for coordination purposes.
+        Contact information is provided for coordination purposes. Use the "Update Status" button to change a volunteer's status.
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateStatusModalLabel">Update Volunteer Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <strong id="volunteerName"></strong> (<span id="volunteerCallsign" class="text-primary"></span>)
+                </div>
+                <div class="mb-3">
+                    <label for="newStatus" class="form-label">New Status</label>
+                    <select class="form-select" id="newStatus" required>
+                        <option value="">-- Select Status --</option>
+                    </select>
+                </div>
+                <div id="updateStatusResult" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmUpdateStatus">Update Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+</div>
+
+<!-- Error Toast -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body"></div>
     </div>
 </div>
 {% endblock %}
@@ -57,9 +113,66 @@
 {% block scripts %}
 <script src="{{ url_for('static', filename='vend/DataTables/datatables.min.js') }}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+let updateStatusModal;
+let selectedVolunteer = null;
+let rosterTable;
+
+// Toast helper
+function showToast(type, message) {
+    const toastEl = document.getElementById(type === 'error' ? 'errorToast' : 'successToast');
+    toastEl.querySelector('.toast-body').textContent = message;
+    const toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize modal
+    updateStatusModal = new bootstrap.Modal(document.getElementById('updateStatusModal'));
+    
+    // Load station statuses for the dropdown from nDART station_statuses table
+    try {
+        console.log('Fetching station statuses from /api/station_statuses/');
+        const response = await fetch('/api/station_statuses/');
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            console.error('Failed to fetch statuses: HTTP', response.status);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            return;
+        }
+        
+        const result = await response.json();
+        console.log('Received result:', result);
+        
+        const statusSelect = document.getElementById('newStatus');
+        
+        // Clear existing options except the first one
+        while (statusSelect.options.length > 1) {
+            statusSelect.remove(1);
+        }
+        
+        // Add status options
+        if (result.data && Array.isArray(result.data)) {
+            console.log(`Processing ${result.data.length} statuses`);
+            result.data.forEach(status => {
+                console.log('Adding status:', status.name);
+                const option = document.createElement('option');
+                option.value = status.name;
+                option.textContent = status.name;
+                statusSelect.appendChild(option);
+            });
+            console.log(`✓ Successfully loaded ${result.data.length} statuses into dropdown`);
+        } else {
+            console.error('No data array in response. Result structure:', result);
+        }
+    } catch (error) {
+        console.error('Error loading statuses:', error);
+        console.error('Error details:', error.message, error.stack);
+    }
+    
     // Initialize DataTable with AJAX data source
-    const rosterTable = new DataTable('#rosterTable', {
+    rosterTable = new DataTable('#rosterTable', {
         ajax: {
             url: '{{ url_for("main_bp.get_aro_roster_data") }}',
             dataSrc: 'data'
@@ -95,6 +208,37 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             { data: 'name' },
             {
+                data: 'status',
+                render: function(data, type, row) {
+                    if (!data) {
+                        return '<span class="text-muted">-</span>';
+                    }
+                    
+                    // Color coding based on status
+                    let badgeClass = 'secondary';
+                    const statusLower = data.toLowerCase();
+                    
+                    if (statusLower.includes('on station') || statusLower.includes('checked-in')) {
+                        badgeClass = 'success';
+                    } else if (statusLower.includes('assigned')) {
+                        badgeClass = 'info';
+                    } else if (statusLower.includes('secured') || statusLower.includes('off station')) {
+                        badgeClass = 'secondary';
+                    } else if (statusLower.includes('not checked')) {
+                        badgeClass = 'warning';
+                    }
+                    
+                    let html = `<span class="badge bg-${badgeClass}">${data}</span>`;
+                    
+                    // Add timestamp if available
+                    if (row.status_timestamp) {
+                        html += `<br><small class="text-muted">${row.status_timestamp}</small>`;
+                    }
+                    
+                    return html;
+                }
+            },
+            {
                 data: 'email',
                 render: function(data) {
                     return data ? `<a href="mailto:${data}">${data}</a>` : '-';
@@ -104,6 +248,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 data: 'phone_number',
                 render: function(data) {
                     return data ? `<a href="tel:${data}">${data}</a>` : '-';
+                }
+            },
+            {
+                data: null,
+                orderable: false,
+                render: function(data, type, row) {
+                    return `<button class="btn btn-sm btn-outline-primary btn-update-status" 
+                                    data-callsign="${row.callsign}" 
+                                    data-name="${row.name || row.callsign}"
+                                    data-current-status="${row.status || ''}">
+                                <i class="bi bi-pencil-square"></i> Update Status
+                            </button>`;
                 }
             }
         ],
@@ -118,6 +274,85 @@ document.addEventListener('DOMContentLoaded', function() {
             infoFiltered: "(filtered from _MAX_ total volunteers)"
         },
         responsive: true
+    });
+    
+    // Handle update status button clicks (using event delegation)
+    document.getElementById('rosterTable').addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-update-status');
+        if (!btn) return;
+        
+        selectedVolunteer = {
+            callsign: btn.dataset.callsign,
+            name: btn.dataset.name,
+            currentStatus: btn.dataset.currentStatus
+        };
+        
+        // Set modal content
+        document.getElementById('volunteerName').textContent = selectedVolunteer.name;
+        document.getElementById('volunteerCallsign').textContent = selectedVolunteer.callsign;
+        
+        // Pre-select current status if available
+        const statusSelect = document.getElementById('newStatus');
+        if (selectedVolunteer.currentStatus) {
+            statusSelect.value = selectedVolunteer.currentStatus;
+        } else {
+            statusSelect.value = '';
+        }
+        
+        // Clear previous result
+        document.getElementById('updateStatusResult').style.display = 'none';
+        
+        // Show modal
+        updateStatusModal.show();
+    });
+    
+    // Handle confirm update
+    document.getElementById('confirmUpdateStatus').addEventListener('click', async function() {
+        const newStatus = document.getElementById('newStatus').value;
+        const resultDiv = document.getElementById('updateStatusResult');
+        
+        if (!newStatus) {
+            resultDiv.innerHTML = '<div class="alert alert-warning mb-0">Please select a status</div>';
+            resultDiv.style.display = 'block';
+            return;
+        }
+        
+        // Disable button and show loading
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+        
+        try {
+            const response = await fetch('/api/staffer-volunteers/checkin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    callsign: selectedVolunteer.callsign,
+                    status: newStatus
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showToast('success', result.success || `Status updated for ${selectedVolunteer.callsign}`);
+                updateStatusModal.hide();
+                
+                // Reload table to show updated status
+                rosterTable.ajax.reload(null, false);
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-danger mb-0">${result.error || 'Update failed'}</div>`;
+                resultDiv.style.display = 'block';
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<div class="alert alert-danger mb-0">${error.message || 'An error occurred'}</div>`;
+            resultDiv.style.display = 'block';
+        } finally {
+            this.disabled = false;
+            this.innerHTML = 'Update Status';
+        }
     });
 });
 </script>

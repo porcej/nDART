@@ -13,6 +13,7 @@ class StationStatus(db.Model):
     description = db.Column(db.Text, nullable=True)
     enabled = db.Column(db.Boolean, default=True)
     sort_order = db.Column(db.Integer, default=0)
+    delete_flag = db.Column(db.Boolean, default=False)
     # Relationships
     status_reports = db.relationship('StatusReport', lazy=True, 
                            foreign_keys='StatusReport.status_id',
@@ -31,6 +32,7 @@ class StationStatus(db.Model):
             'description': self.description,
             'sort_order': self.sort_order,
             'enabled': self.enabled,
+            'delete_flag': self.delete_flag,
         }
     
     def to_form_options(self):

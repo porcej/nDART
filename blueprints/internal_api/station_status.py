@@ -41,10 +41,15 @@ def api_get_station_statuses(station_status_id=None):
     Return StationStatus data as a JSON in a format compatible with DataTables.
     For a basic approact (client-side processing), we'll return all rows
     """
+    # if station_status_id is not None:
+    #     station_statuses = StationStatus.query.filter_by(id=station_status_id, delete_flag=False).all()
+    # else:
+    #     station_statuses = StationStatus.query.filter_by(delete_flag=False).all()
+
     if station_status_id is not None:
-        station_statuses = StationStatus.query.filter_by(id=station_status_id, delete_flag=False).all()
+        station_statuses = StationStatus.query.filter_by(id=station_status_id).all()
     else:
-        station_statuses = StationStatus.query.filter_by(delete_flag=False).all()
+        station_statuses = StationStatus.query.all()
 
     data = [station_status.to_dict() for station_status in station_statuses]
 

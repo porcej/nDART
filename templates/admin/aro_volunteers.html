@@ -47,6 +47,7 @@
                             <th>Staffer Assignment</th>
                             <th>Callsign</th>
                             <th>Name</th>
+                            <th>Status</th>
                             <th>Email</th>
                             <th>Phone</th>
                         </tr>
@@ -113,6 +114,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             { data: 'name' },
+            {
+                data: 'status',
+                render: function(data, type, row) {
+                    if (!data) {
+                        return '<span class="text-muted">-</span>';
+                    }
+                    
+                    // Color coding based on status
+                    let badgeClass = 'secondary';
+                    const statusLower = data.toLowerCase();
+                    
+                    if (statusLower.includes('on station') || statusLower.includes('checked-in')) {
+                        badgeClass = 'success';
+                    } else if (statusLower.includes('assigned')) {
+                        badgeClass = 'info';
+                    } else if (statusLower.includes('secured') || statusLower.includes('off station')) {
+                        badgeClass = 'secondary';
+                    } else if (statusLower.includes('not checked')) {
+                        badgeClass = 'warning';
+                    }
+                    
+                    let html = `<span class="badge bg-${badgeClass}">${data}</span>`;
+                    
+                    // Add timestamp if available
+                    if (row.status_timestamp) {
+                        html += `<br><small class="text-muted">${row.status_timestamp}</small>`;
+                    }
+                    
+                    return html;
+                }
+            },
             {
                 data: 'email',
                 render: function(data) {

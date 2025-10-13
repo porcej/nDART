@@ -14,14 +14,15 @@ class StafferAROVolunteer(db.Model):
     email = db.Column(db.String(120), nullable=True)
     phone_number = db.Column(db.String(20), nullable=True)
     name = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(50), nullable=True)  # Current status from staffer
+    status_timestamp = db.Column(db.DateTime, nullable=True)  # When status was last updated
     
     __table_args__ = (
         db.UniqueConstraint('callsign', name='uq_staffer_aro_volunteers_callsign'),
-        db.UniqueConstraint('assignment_id', name='uq_staffer_aro_volunteers_assignment_id'),
     )
     
     # Relationships
-    assignment = db.relationship('Assignment', foreign_keys=[assignment_id], backref='staffer_volunteer')
+    assignment = db.relationship('Assignment', foreign_keys=[assignment_id], backref='staffer_volunteers')
     
     def __repr__(self):
         return f"<StafferAROVolunteer {self.name} - {self.callsign}>"
@@ -36,6 +37,8 @@ class StafferAROVolunteer(db.Model):
             'email': self.email,
             'phone_number': self.phone_number,
             'name': self.name,
+            'status': self.status,
+            'status_timestamp': self.status_timestamp.isoformat() if self.status_timestamp else None,
         }
     
     @staticmethod
@@ -44,7 +47,7 @@ class StafferAROVolunteer(db.Model):
         return StafferAROVolunteer.query.filter_by(assignment_id=assignment_id).first()
     
     @staticmethod
-    def update_or_create_by_callsign(callsign, assignment_id=None, staffer_assignment=None, short_code=None, email=None, phone_number=None, name=None):
+    def update_or_create_by_callsign(callsign, assignment_id=None, staffer_assignment=None, short_code=None, email=None, phone_number=None, name=None, status=None, status_timestamp=None):
         """Update existing or create new staffer volunteer mapping by callsign"""
         volunteer = StafferAROVolunteer.query.filter_by(callsign=callsign).first()
         
@@ -62,6 +65,10 @@ class StafferAROVolunteer(db.Model):
                 volunteer.phone_number = phone_number
             if name is not None:
                 volunteer.name = name
+            if status is not None:
+                volunteer.status = status
+            if status_timestamp is not None:
+                volunteer.status_timestamp = status_timestamp
         else:
             # Create new
             volunteer = StafferAROVolunteer(
@@ -71,7 +78,9 @@ class StafferAROVolunteer(db.Model):
                 callsign=callsign,
                 email=email,
                 phone_number=phone_number,
-                name=name
+                name=name,
+                status=status,
+                status_timestamp=status_timestamp
             )
             db.session.add(volunteer)
         
