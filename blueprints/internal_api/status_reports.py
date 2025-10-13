@@ -26,46 +26,46 @@ def api_create_status_report():
         send_status_report_notification('new_status_report', new_status_report.to_dict())
 
         # Send to staffer API if configured
-        staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
-        if staffer_enabled.lower() == 'true':
-            try:
-                # Get additional data for the API call
-                reporter_data = None
-                status_data = None
+        # staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
+        # if staffer_enabled.lower() == 'true':
+        #     try:
+        #         # Get additional data for the API call
+        #         reporter_data = None
+        #         status_data = None
                 
-                if new_status_report.reporter_id:
-                    reporter = Assignment.query.get(new_status_report.reporter_id)
-                    if reporter:
-                        reporter_data = {
-                            'id': reporter.id,
-                            'name': reporter.name if hasattr(reporter, 'name') else None,
-                        }
+        #         if new_status_report.reporter_id:
+        #             reporter = Assignment.query.get(new_status_report.reporter_id)
+        #             if reporter:
+        #                 reporter_data = {
+        #                     'id': reporter.id,
+        #                     'name': reporter.name if hasattr(reporter, 'name') else None,
+        #                 }
                 
-                if new_status_report.status_id:
-                    status = StationStatus.query.get(new_status_report.status_id)
-                    if status:
-                        status_data = {
-                            'id': status.id,
-                            'name': status.name if hasattr(status, 'name') else None,
-                        }
+        #         if new_status_report.status_id:
+        #             status = StationStatus.query.get(new_status_report.status_id)
+        #             if status:
+        #                 status_data = {
+        #                     'id': status.id,
+        #                     'name': status.name if hasattr(status, 'name') else None,
+        #                 }
                 
-                # Prepare status report data
-                status_report_data = {
-                    'time': new_status_report.time,
-                    'reporter_id': new_status_report.reporter_id,
-                    'status_id': new_status_report.status_id,
-                    'comment': new_status_report.comment
-                }
+        #         # Prepare status report data
+        #         status_report_data = {
+        #             'time': new_status_report.time,
+        #             'reporter_id': new_status_report.reporter_id,
+        #             'status_id': new_status_report.status_id,
+        #             'comment': new_status_report.comment
+        #         }
                 
-                result = send_status_report_to_staffer(status_report_data, reporter_data, status_data)
+        #         result = send_status_report_to_staffer(status_report_data, reporter_data, status_data)
                 
-                # Log the result but don't fail the main operation
-                if not result.get('success'):
-                    print(f"Warning: Failed to send status report to staffer API: {result.get('error')}")
+        #         # Log the result but don't fail the main operation
+        #         if not result.get('success'):
+        #             print(f"Warning: Failed to send status report to staffer API: {result.get('error')}")
                     
-            except Exception as staffer_error:
-                # Log the error but don't fail the main operation
-                print(f"Warning: Exception while sending to staffer API: {str(staffer_error)}")
+        #     except Exception as staffer_error:
+        #         # Log the error but don't fail the main operation
+        #         print(f"Warning: Exception while sending to staffer API: {str(staffer_error)}")
 
         return jsonify({
             'data': [new_status_report.to_dict()]
@@ -124,46 +124,46 @@ def api_update_status_report(status_report_id):
         send_status_report_notification('edit_status_report', status_report.to_dict())
 
         # Update in staffer API if configured
-        staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
-        if staffer_enabled.lower() == 'true':
-            try:
-                # Get additional data for the API call
-                reporter_data = None
-                status_data = None
+        # staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
+        # if staffer_enabled.lower() == 'true':
+        #     try:
+        #         # Get additional data for the API call
+        #         reporter_data = None
+        #         status_data = None
                 
-                if status_report.reporter_id:
-                    reporter = Assignment.query.get(status_report.reporter_id)
-                    if reporter:
-                        reporter_data = {
-                            'id': reporter.id,
-                            'name': reporter.name if hasattr(reporter, 'name') else None,
-                        }
+        #         if status_report.reporter_id:
+        #             reporter = Assignment.query.get(status_report.reporter_id)
+        #             if reporter:
+        #                 reporter_data = {
+        #                     'id': reporter.id,
+        #                     'name': reporter.name if hasattr(reporter, 'name') else None,
+        #                 }
                 
-                if status_report.status_id:
-                    status = StationStatus.query.get(status_report.status_id)
-                    if status:
-                        status_data = {
-                            'id': status.id,
-                            'name': status.name if hasattr(status, 'name') else None,
-                        }
+        #         if status_report.status_id:
+        #             status = StationStatus.query.get(status_report.status_id)
+        #             if status:
+        #                 status_data = {
+        #                     'id': status.id,
+        #                     'name': status.name if hasattr(status, 'name') else None,
+        #                 }
                 
-                # Prepare status report data
-                status_report_data = {
-                    'time': status_report.time,
-                    'reporter_id': status_report.reporter_id,
-                    'status_id': status_report.status_id,
-                    'comment': status_report.comment
-                }
+        #         # Prepare status report data
+        #         status_report_data = {
+        #             'time': status_report.time,
+        #             'reporter_id': status_report.reporter_id,
+        #             'status_id': status_report.status_id,
+        #             'comment': status_report.comment
+        #         }
                 
-                result = update_status_report_in_staffer(status_report_id, status_report_data, reporter_data, status_data)
+        #         result = update_status_report_in_staffer(status_report_id, status_report_data, reporter_data, status_data)
                 
-                # Log the result but don't fail the main operation
-                if not result.get('success'):
-                    print(f"Warning: Failed to update status report in staffer API: {result.get('error')}")
+        #         # Log the result but don't fail the main operation
+        #         if not result.get('success'):
+        #             print(f"Warning: Failed to update status report in staffer API: {result.get('error')}")
                     
-            except Exception as staffer_error:
-                # Log the error but don't fail the main operation
-                print(f"Warning: Exception while updating in staffer API: {str(staffer_error)}")
+        #    except Exception as staffer_error:
+        #        # Log the error but don't fail the main operation
+        #        print(f"Warning: Exception while updating in staffer API: {str(staffer_error)}")
 
         return jsonify({
             'data': [status_report.to_dict()]
@@ -177,20 +177,46 @@ def api_update_status_report(status_report_id):
 @status_report_bp.route('/<status_report_id>', methods=['DELETE'])
 @login_required
 def api_delete_status_report(status_report_id):
-    """soft Delete an existing status report"""
+    """soft Delete one or more status reports"""
     try:
-        status_report = StatusReport.query.filter_by(id=status_report_id, delete_flag=False).first()
-        if status_report is None:
-            return jsonify({'error': 'Status report not found'}), 404
+        # Check if we have data in the request body (multiple deletes)
+        request_data = request.get_json() if request.data else None
         
-        status_report.delete_flag = True
-        db.session.commit()
+        deleted_reports = []
+        
+        if request_data and 'data' in request_data:
+            # Multiple deletes - DataTables Editor sends: {"data": {"id1": {...}, "id2": {...}}}
+            ids_to_delete = list(request_data['data'].keys())
+            
+            for report_id in ids_to_delete:
+                status_report = StatusReport.query.filter_by(id=report_id, delete_flag=False).first()
+                if status_report:
+                    status_report.delete_flag = True
+                    deleted_reports.append(status_report.to_dict())
+                    send_status_report_notification('remove_status_report', status_report.to_dict())
+            
+            if not deleted_reports:
+                return jsonify({'error': 'No status reports found'}), 404
+            
+            db.session.commit()
+            
+            return jsonify({
+                'data': deleted_reports
+            })
+        else:
+            # Single delete - ID in URL
+            status_report = StatusReport.query.filter_by(id=status_report_id, delete_flag=False).first()
+            if status_report is None:
+                return jsonify({'error': 'Status report not found'}), 404
+            
+            status_report.delete_flag = True
+            db.session.commit()
 
-        send_status_report_notification('remove_status_report', status_report.to_dict())
+            send_status_report_notification('remove_status_report', status_report.to_dict())
 
-        return jsonify({
-            'data': [status_report.to_dict()]
-        })
+            return jsonify({
+                'data': [status_report.to_dict()]
+            })
 
     except Exception as e:
         db.session.rollback()

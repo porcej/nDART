@@ -201,3 +201,34 @@ def sync_aro_volunteers():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@admin_bp.route('/settings/import-statuses', methods=['POST'])
+@login_required
+@admin_required
+def import_statuses():
+    """Import station statuses from the staffer API."""
+    try:
+        from blueprints.internal_api.staffer_api_service import import_statuses_from_staffer
+        
+        result = import_statuses_from_staffer()
+        
+        if result['success']:
+            message = f"Successfully imported {result['imported']} new and updated {result['updated']} existing statuses"
+            return jsonify({
+                'success': message,
+                'details': result
+            })
+        else:
+            error_msg = result.get('error', 'Import failed')
+            if 'imported' in result:
+                error_msg = f"Imported {result['imported']} new, updated {result['updated']}, {result['failed']} failed."
+                if 'errors' in result:
+                    error_msg += f" Errors: {', '.join(result['errors'][:3])}"
+            return jsonify({
+                'error': error_msg,
+                'details': result
+            }), 400
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+

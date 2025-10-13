@@ -8,6 +8,9 @@ class StationStatus(db.Model):
     # Columns   
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid4()))
     name = db.Column(db.String(100), nullable=False)
+    color = db.Column(db.String(50), nullable=True)  # Bootstrap color class
+    icon = db.Column(db.String(50), nullable=True)  # Icon class or name
+    description = db.Column(db.Text, nullable=True)
     enabled = db.Column(db.Boolean, default=True)
     sort_order = db.Column(db.Integer, default=0)
     # Relationships
@@ -23,6 +26,9 @@ class StationStatus(db.Model):
         return {
             'id': self.id,
             'name': self.name,
+            'color': self.color,
+            'icon': self.icon,
+            'description': self.description,
             'sort_order': self.sort_order,
             'enabled': self.enabled,
         }

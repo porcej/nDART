@@ -7,17 +7,33 @@
     .settings-section {
         margin-bottom: 2rem;
         padding: 1.5rem;
-        background-color: #f8f9fa;
+        background-color: var(--bs-secondary-bg);
+        border: 1px solid var(--bs-border-color);
         border-radius: 0.5rem;
     }
     .settings-section h3 {
         margin-bottom: 1rem;
         font-size: 1.25rem;
         font-weight: 600;
+        color: var(--bs-body-color);
     }
     .form-label {
         font-weight: 500;
         margin-bottom: 0.5rem;
+        color: var(--bs-body-color);
+    }
+    .form-control, .form-select {
+        background-color: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        border-color: var(--bs-border-color);
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: var(--bs-body-bg);
+        color: var(--bs-body-color);
+        border-color: var(--bs-primary);
+    }
+    .form-text {
+        color: var(--bs-secondary-color);
     }
     .api-status {
         padding: 0.5rem 1rem;
@@ -27,14 +43,22 @@
         margin-top: 0.5rem;
     }
     .api-status.success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background-color: var(--bs-success-bg-subtle);
+        color: var(--bs-success-text-emphasis);
+        border: 1px solid var(--bs-success-border-subtle);
     }
     .api-status.error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background-color: var(--bs-danger-bg-subtle);
+        color: var(--bs-danger-text-emphasis);
+        border: 1px solid var(--bs-danger-border-subtle);
+    }
+    .card {
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-border-color);
+    }
+    .card-header {
+        background-color: var(--bs-secondary-bg);
+        border-bottom-color: var(--bs-border-color);
     }
 </style>
 {% endblock %}
@@ -97,39 +121,26 @@
         </form>
     </div>
     
-    <!-- Sync Data Section -->
+    <!-- Import Data Section -->
     <div class="settings-section">
-        <h3><i class="bi bi-arrow-repeat me-2"></i>Synchronize Data</h3>
-        <p class="text-muted mb-4">Manually sync assignments and station statuses with the staffer database. This will send all enabled records to the staffer API.</p>
+        <h3><i class="bi bi-download me-2"></i>Import Data from Staffer</h3>
+        <p class="text-muted mb-4">Import station statuses and volunteer data from the staffer database into nDART.</p>
         
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-calendar-check me-2"></i>Assignments</h5>
-                        <p class="card-text">Sync all enabled assignments (reporters) to the staffer database.</p>
-                        <button type="button" class="btn btn-primary w-100" id="syncAssignmentsBtn">
-                            <i class="bi bi-arrow-repeat me-2"></i>Sync Assignments
+                        <h5 class="card-title"><i class="bi bi-flag-fill me-2"></i>Import Statuses</h5>
+                        <p class="card-text">Import station statuses from the staffer database.</p>
+                        <button type="button" class="btn btn-success w-100" id="importStatusesBtn">
+                            <i class="bi bi-download me-2"></i>Import Statuses
                         </button>
-                        <div id="assignmentsSyncStatus" class="mt-2" style="display: none;"></div>
+                        <div id="importStatusesStatus" class="mt-2" style="display: none;"></div>
                     </div>
                 </div>
             </div>
             
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-flag me-2"></i>Station Statuses</h5>
-                        <p class="card-text">Sync all enabled station statuses to the staffer database.</p>
-                        <button type="button" class="btn btn-primary w-100" id="syncStatusesBtn">
-                            <i class="bi bi-arrow-repeat me-2"></i>Sync Statuses
-                        </button>
-                        <div id="statusesSyncStatus" class="mt-2" style="display: none;"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title"><i class="bi bi-people me-2"></i>ARO Volunteers</h5>
@@ -147,9 +158,9 @@
             <i class="bi bi-info-circle me-2"></i>
             <strong>Note:</strong> 
             <ul class="mb-0 mt-2">
-                <li><strong>Assignments & Statuses:</strong> Sync these when you add or modify them in nDART.</li>
-                <li><strong>ARO Volunteers:</strong> Import this data from the staffer database to populate volunteer contact information.</li>
-                <li><strong>Status Reports:</strong> These are automatically synchronized in real-time when the integration is enabled.</li>
+                <li><strong>Import Statuses:</strong> Fetch station statuses from the staffer database into nDART.</li>
+                <li><strong>Import Volunteers:</strong> Fetch volunteer data from the staffer database to populate contact information.</li>
+                <li><strong>Status Reports:</strong> Automatically synchronized in real-time when integration is enabled.</li>
             </ul>
         </div>
         
@@ -308,93 +319,7 @@ document.getElementById('testConnectionBtn').addEventListener('click', async fun
     }
 });
 
-// Handle sync assignments
-document.getElementById('syncAssignmentsBtn').addEventListener('click', async function() {
-    const btn = this;
-    const originalHtml = btn.innerHTML;
-    const statusDiv = document.getElementById('assignmentsSyncStatus');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Syncing...';
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = 'Synchronizing assignments...';
-    statusDiv.className = 'mt-2';
-    
-    try {
-        const response = await fetch('/admin/settings/sync-assignments', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            statusDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>${result.success}`;
-            statusDiv.className = 'api-status success';
-            showToast('success', result.success);
-        } else {
-            const error = await response.json();
-            statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${error.error || 'Sync failed'}`;
-            statusDiv.className = 'api-status error';
-            showToast('error', error.error || 'Sync failed');
-        }
-        
-    } catch (error) {
-        statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${error.message || 'An error occurred'}`;
-        statusDiv.className = 'api-status error';
-        showToast('error', error.message || 'An error occurred');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-    }
-});
-
-// Handle sync statuses
-document.getElementById('syncStatusesBtn').addEventListener('click', async function() {
-    const btn = this;
-    const originalHtml = btn.innerHTML;
-    const statusDiv = document.getElementById('statusesSyncStatus');
-    
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Syncing...';
-    statusDiv.style.display = 'block';
-    statusDiv.innerHTML = 'Synchronizing station statuses...';
-    statusDiv.className = 'mt-2';
-    
-    try {
-        const response = await fetch('/admin/settings/sync-statuses', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin'
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            statusDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>${result.success}`;
-            statusDiv.className = 'api-status success';
-            showToast('success', result.success);
-        } else {
-            const error = await response.json();
-            statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${error.error || 'Sync failed'}`;
-            statusDiv.className = 'api-status error';
-            showToast('error', error.error || 'Sync failed');
-        }
-        
-    } catch (error) {
-        statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${error.message || 'An error occurred'}`;
-        statusDiv.className = 'api-status error';
-        showToast('error', error.message || 'An error occurred');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
-    }
-});
-
-// Handle sync ARO volunteers
+// Handle import ARO volunteers
 document.getElementById('syncVolunteersBtn').addEventListener('click', async function() {
     const btn = this;
     const originalHtml = btn.innerHTML;
@@ -408,6 +333,49 @@ document.getElementById('syncVolunteersBtn').addEventListener('click', async fun
     
     try {
         const response = await fetch('/admin/settings/sync-aro-volunteers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            statusDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i>${result.success}`;
+            statusDiv.className = 'api-status success';
+            showToast('success', result.success);
+        } else {
+            const error = await response.json();
+            statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${error.error || 'Import failed'}`;
+            statusDiv.className = 'api-status error';
+            showToast('error', error.error || 'Import failed');
+        }
+        
+    } catch (error) {
+        statusDiv.innerHTML = `<i class="bi bi-x-circle me-2"></i>${error.message || 'An error occurred'}`;
+        statusDiv.className = 'api-status error';
+        showToast('error', error.message || 'An error occurred');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+});
+
+// Handle import statuses
+document.getElementById('importStatusesBtn').addEventListener('click', async function() {
+    const btn = this;
+    const originalHtml = btn.innerHTML;
+    const statusDiv = document.getElementById('importStatusesStatus');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Importing...';
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = 'Importing station statuses...';
+    statusDiv.className = 'mt-2';
+    
+    try {
+        const response = await fetch('/admin/settings/import-statuses', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

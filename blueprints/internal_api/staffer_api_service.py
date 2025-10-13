@@ -40,93 +40,101 @@ def get_api_headers(api_key):
 
 
 def test_staffer_api_connection():
-    """Test connection to the staffer API"""
+    """Test connection to the staffer API using the /verify endpoint"""
     try:
         config = get_staffer_api_config()
         headers = get_api_headers(config['api_key'])
         
-        details = []
+        # Use the verify endpoint
+        response = requests.get(
+            f"{config['base_url']}/verify",
+            headers=headers,
+            timeout=10
+        )
         
-        # Try the health endpoint first
-        try:
-            response = requests.get(
-                f"{config['base_url']}/health",
-                headers=headers,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                details.append('✓ Health endpoint: OK')
-                try:
-                    health_data = response.json()
-                    if 'status' in health_data:
-                        details.append(f"  Status: {health_data['status']}")
-                except:
-                    pass
+        if response.status_code == 200:
+            try:
+                verify_data = response.json()
+                
+                # Check authentication status
+                if not verify_data.get('authenticated', False):
+                    return {
+                        'success': False,
+                        'error': 'Authentication failed. API key is not valid.'
+                    }
+                
+                # Build detailed success message
+                details = []
+                details.append('✓ Connection verified successfully')
+                
+                api_key_info = verify_data.get('api_key', {})
+                if api_key_info:
+                    details.append(f"  API Key: {api_key_info.get('name', 'Unknown')}")
+                    details.append(f"  Active: {'Yes' if api_key_info.get('is_active') else 'No'}")
+                    
+                    # Show expiration if present
+                    expires_at = api_key_info.get('expires_at')
+                    if expires_at:
+                        details.append(f"  Expires: {expires_at}")
+                    else:
+                        details.append(f"  Expires: Never")
+                    
+                    # Show rate limits
+                    rate_limits = api_key_info.get('rate_limits', {})
+                    if rate_limits:
+                        details.append(f"  Rate Limits:")
+                        details.append(f"    - Per minute: {rate_limits.get('per_minute', 0)}")
+                        details.append(f"    - Per hour: {rate_limits.get('per_hour', 0)}")
+                        details.append(f"    - Per day: {rate_limits.get('per_day', 0)}")
+                    
+                    # Show scopes
+                    scopes = api_key_info.get('scopes', [])
+                    if scopes:
+                        if isinstance(scopes, str):
+                            import json
+                            try:
+                                scopes = json.loads(scopes)
+                            except:
+                                pass
+                        if isinstance(scopes, list) and scopes:
+                            details.append(f"  Scopes: {', '.join(scopes[:5])}")
+                
+                message = verify_data.get('message', '')
+                if message:
+                    details.append(f"  Message: {message}")
                 
                 return {
                     'success': True,
                     'details': '\n'.join(details)
                 }
-            elif response.status_code == 401 or response.status_code == 403:
-                return {
-                    'success': False,
-                    'error': f'Authentication failed (HTTP {response.status_code}). Please check your API key.'
-                }
-            elif response.status_code == 404:
-                details.append('⚠ Health endpoint not found (404)')
-            else:
-                details.append(f'⚠ Health endpoint returned: HTTP {response.status_code}')
                 
-        except requests.exceptions.RequestException as e:
-            details.append(f'⚠ Health endpoint error: {str(e)[:50]}')
-        
-        # If health fails, try docs endpoint to verify connectivity
-        # Docs is at the same level as v1: /public-api/docs
-        try:
-            # Remove /v1 from base_url if present and add /docs
-            base_without_version = config['base_url'].rstrip('/').replace('/v1', '')
-            docs_url = f"{base_without_version}/docs"
-            
-            response = requests.get(
-                docs_url,
-                timeout=10
-            )
-            
-            if response.status_code == 200:
-                details.append(f'✓ Docs endpoint: Reachable')
-                details.append('  Note: API is accessible but health endpoint may not be implemented')
+            except Exception as e:
+                # If we can't parse the response, still report success if status is 200
                 return {
                     'success': True,
-                    'details': '\n'.join(details)
+                    'details': 'Connection successful (verify endpoint responded)'
                 }
-            else:
-                details.append(f'✗ Docs endpoint: HTTP {response.status_code}')
-                
-        except requests.exceptions.RequestException as e:
-            details.append(f'✗ Docs endpoint error: {str(e)[:50]}')
         
-        # If both fail, check basic connectivity
-        try:
-            # Try a simple request to the base URL
-            response = requests.get(
-                config['base_url'],
-                timeout=10
-            )
-            details.append(f'✓ Base URL is reachable (HTTP {response.status_code})')
-            details.append('  Warning: Standard endpoints may not be configured correctly')
+        elif response.status_code == 401 or response.status_code == 403:
+            return {
+                'success': False,
+                'error': f'Authentication failed (HTTP {response.status_code}). Please check your API key.'
+            }
+        else:
+            error_msg = f'Verify endpoint returned HTTP {response.status_code}'
+            try:
+                error_data = response.json()
+                if 'message' in error_data:
+                    error_msg = f"{error_msg}: {error_data['message']}"
+                elif 'detail' in error_data:
+                    error_msg = f"{error_msg}: {error_data['detail']}"
+            except:
+                pass
             
             return {
-                'success': True,
-                'details': '\n'.join(details)
+                'success': False,
+                'error': error_msg
             }
-        except:
-            pass
-        
-        return {
-            'success': False,
-            'error': 'Could not connect to any API endpoints.\n' + '\n'.join(details)
-        }
         
     except StafferAPIError as e:
         return {
@@ -162,87 +170,89 @@ def send_status_report_to_staffer(status_report_data, reporter_data=None, status
     Returns:
         Dictionary with success status and response data or error message
     """
-    try:
-        config = get_staffer_api_config()
-        headers = get_api_headers(config['api_key'])
+    pass
+    # TODO remove this method and replace with checkin endpoint
+    # try:
+    #     config = get_staffer_api_config()
+    #     headers = get_api_headers(config['api_key'])
         
-        # Prepare the payload based on the staffer API requirements
-        # This structure may need to be adjusted based on actual API documentation
-        payload = {
-            'timestamp': status_report_data.get('time', datetime.utcnow()).isoformat() if isinstance(status_report_data.get('time'), datetime) else str(status_report_data.get('time')),
-            'status_id': status_report_data.get('status_id'),
-            'reporter_id': status_report_data.get('reporter_id'),
-            'comment': status_report_data.get('comment', ''),
-            'source': 'nDART'
-        }
+    #     # Prepare the payload based on the staffer API requirements
+    #     # This structure may need to be adjusted based on actual API documentation
+    #     payload = {
+    #         'timestamp': status_report_data.get('time', datetime.utcnow()).isoformat() if isinstance(status_report_data.get('time'), datetime) else str(status_report_data.get('time')),
+    #         'status_id': status_report_data.get('status_id'),
+    #         'reporter_id': status_report_data.get('reporter_id'),
+    #         'comment': status_report_data.get('comment', ''),
+    #         'source': 'nDART'
+    #     }
         
-        # Add reporter information if available
-        if reporter_data:
-            payload['reporter'] = {
-                'id': reporter_data.get('id'),
-                'name': reporter_data.get('name'),
-                'role': reporter_data.get('role')
-            }
+    #     # Add reporter information if available
+    #     if reporter_data:
+    #         payload['reporter'] = {
+    #             'id': reporter_data.get('id'),
+    #             'name': reporter_data.get('name'),
+    #             'role': reporter_data.get('role')
+    #         }
         
-        # Add status information if available
-        if status_data:
-            payload['status'] = {
-                'id': status_data.get('id'),
-                'name': status_data.get('name'),
-                'category': status_data.get('category')
-            }
+    #     # Add status information if available
+    #     if status_data:
+    #         payload['status'] = {
+    #             'id': status_data.get('id'),
+    #             'name': status_data.get('name'),
+    #             'category': status_data.get('category')
+    #         }
         
-        # Send the request to the staffer API
-        # Adjust the endpoint based on actual API documentation
-        response = requests.post(
-            f"{config['base_url']}/status-reports",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
+    #     # Send the request to the staffer API
+    #     # Adjust the endpoint based on actual API documentation
+    #     response = requests.post(
+    #         f"{config['base_url']}/status-reports",
+    #         headers=headers,
+    #         json=payload,
+    #         timeout=30
+    #     )
         
-        if response.status_code in [200, 201]:
-            return {
-                'success': True,
-                'data': response.json() if response.content else None
-            }
-        else:
-            error_msg = f'API returned status code {response.status_code}'
-            try:
-                error_data = response.json()
-                if 'message' in error_data:
-                    error_msg = error_data['message']
-                elif 'error' in error_data:
-                    error_msg = error_data['error']
-            except:
-                pass
+    #     if response.status_code in [200, 201]:
+    #         return {
+    #             'success': True,
+    #             'data': response.json() if response.content else None
+    #         }
+    #     else:
+    #         error_msg = f'API returned status code {response.status_code}'
+    #         try:
+    #             error_data = response.json()
+    #             if 'message' in error_data:
+    #                 error_msg = error_data['message']
+    #             elif 'error' in error_data:
+    #                 error_msg = error_data['error']
+    #         except:
+    #             pass
             
-            return {
-                'success': False,
-                'error': error_msg,
-                'status_code': response.status_code
-            }
+    #         return {
+    #             'success': False,
+    #             'error': error_msg,
+    #             'status_code': response.status_code
+    #         }
     
-    except StafferAPIError as e:
-        return {
-            'success': False,
-            'error': f'Configuration error: {str(e)}'
-        }
-    except requests.exceptions.ConnectionError:
-        return {
-            'success': False,
-            'error': 'Could not connect to the staffer API'
-        }
-    except requests.exceptions.Timeout:
-        return {
-            'success': False,
-            'error': 'Request to staffer API timed out'
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': f'Unexpected error: {str(e)}'
-        }
+    # except StafferAPIError as e:
+    #     return {
+    #         'success': False,
+    #         'error': f'Configuration error: {str(e)}'
+    #     }
+    # except requests.exceptions.ConnectionError:
+    #     return {
+    #         'success': False,
+    #         'error': 'Could not connect to the staffer API'
+    #     }
+    # except requests.exceptions.Timeout:
+    #     return {
+    #         'success': False,
+    #         'error': 'Request to staffer API timed out'
+    #     }
+    # except Exception as e:
+    #     return {
+    #         'success': False,
+    #         'error': f'Unexpected error: {str(e)}'
+    #     }
 
 
 def update_status_report_in_staffer(status_report_id, status_report_data, reporter_data=None, status_data=None):
@@ -258,77 +268,80 @@ def update_status_report_in_staffer(status_report_id, status_report_data, report
     Returns:
         Dictionary with success status and response data or error message
     """
-    try:
-        config = get_staffer_api_config()
-        headers = get_api_headers(config['api_key'])
+    pass
+    # TODO remove this method and replace with checkin endpoint
+
+    # try:
+    #     config = get_staffer_api_config()
+    #     headers = get_api_headers(config['api_key'])
         
-        # Prepare the payload
-        payload = {
-            'timestamp': status_report_data.get('time', datetime.utcnow()).isoformat() if isinstance(status_report_data.get('time'), datetime) else str(status_report_data.get('time')),
-            'status_id': status_report_data.get('status_id'),
-            'reporter_id': status_report_data.get('reporter_id'),
-            'comment': status_report_data.get('comment', ''),
-            'source': 'nDART'
-        }
+    #     # Prepare the payload
+    #     payload = {
+    #         'timestamp': status_report_data.get('time', datetime.utcnow()).isoformat() if isinstance(status_report_data.get('time'), datetime) else str(status_report_data.get('time')),
+    #         'status_id': status_report_data.get('status_id'),
+    #         'reporter_id': status_report_data.get('reporter_id'),
+    #         'comment': status_report_data.get('comment', ''),
+    #         'source': 'nDART'
+    #     }
         
-        # Add optional data
-        if reporter_data:
-            payload['reporter'] = reporter_data
+    #     # Add optional data
+    #     if reporter_data:
+    #         payload['reporter'] = reporter_data
         
-        if status_data:
-            payload['status'] = status_data
+    #     if status_data:
+    #         payload['status'] = status_data
         
-        # Send the PUT request
-        # Adjust the endpoint based on actual API documentation
-        response = requests.put(
-            f"{config['base_url']}/status-reports/{status_report_id}",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
+    #     # Send the PUT request
+    #     # Adjust the endpoint based on actual API documentation
+    #     response = requests.put(
+    #         f"{config['base_url']}/status-reports/{status_report_id}",
+    #         headers=headers,
+    #         json=payload,
+    #         timeout=30
+    #     )
         
-        if response.status_code in [200, 204]:
-            return {
-                'success': True,
-                'data': response.json() if response.content else None
-            }
-        else:
-            error_msg = f'API returned status code {response.status_code}'
-            try:
-                error_data = response.json()
-                if 'message' in error_data:
-                    error_msg = error_data['message']
-                elif 'error' in error_data:
-                    error_msg = error_data['error']
-            except:
-                pass
+    #     if response.status_code in [200, 204]:
+    #         return {
+    #             'success': True,
+    #             'data': response.json() if response.content else None
+    #         }
+    #     else:
+    #         error_msg = f'API returned status code {response.status_code}'
+    #         try:
+    #             error_data = response.json()
+    #             if 'message' in error_data:
+    #                 error_msg = error_data['message']
+    #             elif 'error' in error_data:
+    #                 error_msg = error_data['error']
+    #         except:
+    #             pass
             
-            return {
-                'success': False,
-                'error': error_msg,
-                'status_code': response.status_code
-            }
+    #         return {
+    #             'success': False,
+    #             'error': error_msg,
+    #             'status_code': response.status_code
+    #         }
     
-    except StafferAPIError as e:
-        return {
-            'success': False,
-            'error': f'Configuration error: {str(e)}'
-        }
-    except requests.exceptions.ConnectionError:
-        return {
-            'success': False,
-            'error': 'Could not connect to the staffer API'
-        }
-    except requests.exceptions.Timeout:
-        return {
-            'success': False,
-            'error': 'Request to staffer API timed out'
-        }
-    except Exception as e:
-        return {
-            'success': False,
-            'error': f'Unexpected error: {str(e)}'
-        }
+    # except StafferAPIError as e:
+    #     return {
+    #         'success': False,
+    #         'error': f'Configuration error: {str(e)}'
+    #     }
+    # except requests.exceptions.ConnectionError:
+    #     return {
+    #         'success': False,
+    #         'error': 'Could not connect to the staffer API'
+    #     }
+    # except requests.exceptions.Timeout:
+    #     return {
+    #         'success': False,
+    #         'error': 'Request to staffer API timed out'
+    #     }
+    # except Exception as e:
+    #     return {
+    #         'success': False,
+    #         'error': f'Unexpected error: {str(e)}'
+    #     }
 
 
 def sync_assignments_to_staffer():
@@ -672,6 +685,190 @@ def sync_aro_volunteers_from_staffer():
         
         return result
         
+    except StafferAPIError as e:
+        return {
+            'success': False,
+            'error': f'Configuration error: {str(e)}'
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            'success': False,
+            'error': 'Could not connect to the staffer API'
+        }
+    except requests.exceptions.Timeout:
+        return {
+            'success': False,
+            'error': 'Request to staffer API timed out'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': f'Unexpected error: {str(e)}'
+        }
+
+
+def import_statuses_from_staffer():
+    """
+    Import station statuses from the staffer database
+    
+    Returns:
+        Dictionary with success status and import results
+    """
+    try:
+        config = get_staffer_api_config()
+        headers = get_api_headers(config['api_key'])
+        
+        # Fetch statuses data
+        response = requests.get(
+            f"{config['base_url']}/statuses",
+            headers=headers,
+            timeout=30
+        )
+        
+        if response.status_code != 200:
+            return {
+                'success': False,
+                'error': f'Failed to fetch statuses: HTTP {response.status_code}'
+            }
+        
+        data = response.json()
+        statuses_data = data.get('data', [])
+        
+        imported_count = 0
+        updated_count = 0
+        failed_count = 0
+        errors = []
+        
+        for status_info in statuses_data:
+            try:
+                # Extract status data
+                status_id = status_info.get('id')
+                name = status_info.get('name')
+                color = status_info.get('color')
+                icon = status_info.get('icon')
+                description = status_info.get('description')
+                
+                if not name:
+                    failed_count += 1
+                    errors.append(f"Status missing name: {status_info}")
+                    continue
+                
+                # Check if status already exists by NAME (to avoid duplicates)
+                existing_status = StationStatus.query.filter_by(name=name).first()
+                
+                if existing_status:
+                    # Update existing status (including ID from staffer)
+                    existing_status.id = status_id  # Update ID to match staffer
+                    existing_status.color = color
+                    existing_status.icon = icon
+                    existing_status.description = description
+                    updated_count += 1
+                else:
+                    # Create new status with staffer's ID
+                    new_status = StationStatus(
+                        id=status_id,
+                        name=name,
+                        color=color,
+                        icon=icon,
+                        description=description,
+                        enabled=True,
+                        sort_order=imported_count
+                    )
+                    db.session.add(new_status)
+                    imported_count += 1
+                
+                db.session.commit()
+                
+            except Exception as e:
+                db.session.rollback()
+                failed_count += 1
+                status_name = status_info.get('name', 'Unknown')
+                errors.append(f"Status '{status_name}': {str(e)}")
+        
+        result = {
+            'success': failed_count == 0,
+            'imported': imported_count,
+            'updated': updated_count,
+            'failed': failed_count,
+            'total': len(statuses_data)
+        }
+        
+        if errors:
+            result['errors'] = errors
+        
+        return result
+        
+    except StafferAPIError as e:
+        return {
+            'success': False,
+            'error': f'Configuration error: {str(e)}'
+        }
+    except requests.exceptions.ConnectionError:
+        return {
+            'success': False,
+            'error': 'Could not connect to the staffer API'
+        }
+    except requests.exceptions.Timeout:
+        return {
+            'success': False,
+            'error': 'Request to staffer API timed out'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': f'Unexpected error: {str(e)}'
+        }
+
+
+def checkin_volunteer_to_staffer(callsign, status):
+    """
+    Check in a volunteer to the staffer database by updating their status
+    
+    Args:
+        callsign: Volunteer's radio callsign
+        status: Status name to set for the volunteer
+        
+    Returns:
+        Dictionary with success status and response data or error message
+    """
+    try:
+        config = get_staffer_api_config()
+        headers = get_api_headers(config['api_key'])
+        
+        payload = {
+            'callsign': callsign,
+            'status': status
+        }
+        
+        # Send check-in to staffer API
+        response = requests.post(
+            f"{config['base_url']}/checkin",
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        
+        if response.status_code in [200, 201, 204]:
+            return {
+                'success': True,
+                'message': f'Updated status for {callsign} in staffer database'
+            }
+        else:
+            error_msg = f'Staffer API returned status {response.status_code}'
+            try:
+                error_data = response.json()
+                if 'message' in error_data:
+                    error_msg = error_data['message']
+                elif 'detail' in error_data:
+                    error_msg = error_data['detail']
+            except:
+                pass
+            
+            return {
+                'success': False,
+                'error': error_msg
+            }
+    
     except StafferAPIError as e:
         return {
             'success': False,

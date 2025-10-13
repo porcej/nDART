@@ -218,8 +218,12 @@ async function updateVolunteersDisplay() {
             return;
         }
         
-        // Build volunteer table with checkboxes
-        const volunteerRows = volunteers.map(v => `
+        // Build volunteer table with checkboxes (all checked by default)
+        const volunteerRows = volunteers.map(v => {
+            // Add to selected set by default
+            selectedVolunteersForUpdate.add(v.callsign);
+            
+            return `
             <tr>
                 <td>
                     <div class="form-check">
@@ -229,7 +233,7 @@ async function updateVolunteersDisplay() {
                                id="vol_${v.callsign.replace(/[^a-zA-Z0-9]/g, '_')}"
                                data-callsign="${v.callsign}"
                                data-name="${v.name || ''}"
-                               ${selectedVolunteersForUpdate.has(v.callsign) ? 'checked' : ''}>
+                               checked>
                         <label class="form-check-label" for="vol_${v.callsign.replace(/[^a-zA-Z0-9]/g, '_')}">
                             Update Status
                         </label>
@@ -240,7 +244,8 @@ async function updateVolunteersDisplay() {
                 <td>${v.phone_number ? `<a href="tel:${v.phone_number}">${v.phone_number}</a>` : '-'}</td>
                 <td>${v.email ? `<a href="mailto:${v.email}">${v.email}</a>` : '-'}</td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
         
         displayDiv.innerHTML = `
             <div class="card border-info">
