@@ -14,8 +14,6 @@ const pendingEventIds = new Set();
 const PENDING_CLEANUP_TIMEOUT = 30000; // 30 seconds
 const pendingTimeouts = new Map();
 
-buildFilterDropDown('reporterFilter', 'assignments', 3);
-buildFilterDropDown('agencyFilter', 'agencies', 5);
 
 
 const resolvedRadioAll = document.getElementById('resolvedRadioAll');
@@ -275,6 +273,10 @@ eventsTable = new DataTable('#events-table', {
         }
     }
 });
+
+// Initialize filter dropdowns after table is created
+buildFilterDropDown('reporterFilter', 'assignments', 3, eventsTable);
+buildFilterDropDown('agencyFilter', 'agencies', 5, eventsTable);
 
 // Activate the bubble editor on click of a table cell
 eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {

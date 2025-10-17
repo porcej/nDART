@@ -57,10 +57,10 @@ export function handlePreSubmit(e, data, action, openVals = null) {
     }
 }
 
-// Build a filter drop down for a given element id, options, and column index
-export function buildFilterDropDown(elementId, options, columnIndex) {
+// Build a filter drop down for a given element id, options, column index, and table instance
+export function buildFilterDropDown(elementId, options, columnIndex, table) {
     const filterElement = document.getElementById(elementId);
-    if (filterElement) {
+    if (filterElement && table) {
         const filterOptions = prepareOptions(options);
         filterOptions.forEach(option => {
             const optionElement = document.createElement('option');
@@ -70,7 +70,7 @@ export function buildFilterDropDown(elementId, options, columnIndex) {
         });
         filterElement.addEventListener('change', function() {
             const selectedValue = this.value;
-            eventsTable.column(columnIndex).search(selectedValue).draw();
+            table.column(columnIndex).search(selectedValue).draw();
         });
     }
 }
