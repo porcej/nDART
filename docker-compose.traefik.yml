@@ -1,0 +1,85 @@
+services:
+  ndart:
+    build: .
+    container_name: ndart-app
+    ports:
+      - "9001:5000"
+    expose:
+      - "5000"
+    environment:
+      # Flask Configuration
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - FLASK_PORT=5000
+      
+      # Database Configuration
+      - DATABASE_URL=sqlite:////app/db/app.db
+      # For production databases, uncomment and modify:
+      # - DATABASE_URL=postgresql://username:password@host:port/database_name
+      # - DATABASE_URL=mysql://username:password@host:port/database_name
+      
+      # Security
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-this-in-production}
+      
+      # Application Settings
+      - FLASK_PORT=${FLASK_PORT}
+      
+     
+      # Logging
+      - LOGGING_PATH=/app/log
+      - LOGGING_LEVEL=20
+      
+    volumes:
+      # Persist database and logs on host filesystem
+      - ./db:/app/db
+      # /path/to/your/production/database.db:/app/db/app.db
+      - ./logs:/app/log
+      # To use your existing production database, uncomment and modify:
+      # - /path/to/your/production/database.db:/app/db/app.db:ro  # Read-only
+      # - /path/to/your/production/database.db:/app/db/app.db      # Read-write
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+      
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      # Ensure Traefik uses the correct Docker network
+      - "traefik.docker.network=proxy"
+      # HTTP router
+      - 'traefik.http.routers.ndart-http.rule=Host(`ndart.app`)'
+      - "traefik.http.routers.ndart-http.entrypoints=web"
+      - "traefik.http.routers.ndart-http.service=ndart"
+      - "traefik.http.services.ndart-app.loadbalancer.server.port=5000"
+    networks:
+      - proxy
+    
+    # Resource limits
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 512M
+    #     reservations:
+    #       memory: 256M
+
+  # # Optional: Staffer API service (if you want to run it locally)
+  # staffer-api:
+  #   image: staffer-api:latest  # Replace with actual image
+  #   container_name: ndart-staffer-api
+  #   ports:
+  #     - "8091:8091"
+  #   environment:
+  #     - API_KEY=${STAFFER_API_KEY:-}
+  #   profiles:
+  #     - staffer  # Only start with --profile staffer
+  #   restart: unless-stopped
+
+networks:
+  # default:
+  #   name: ndart-network
+    proxy:
+      external: true

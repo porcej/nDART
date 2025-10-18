@@ -1,6 +1,19 @@
 // Initialize socket connection
 const socket = io.connect('//' + document.domain + ':' + location.port + '/chat');
 
+// Debug logging
+socket.on('connect', () => {
+    console.log('Socket connected:', socket.id);
+});
+
+socket.on('disconnect', () => {
+    console.log('Socket disconnected');
+});
+
+socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
+});
+
 // Chat elements
 const chatBox = document.getElementById('chat-box');
 const messageForm = document.getElementById('message-form');
@@ -51,6 +64,7 @@ socket.on('previous_messages', (messages) => {
 
 // Handle incoming messages
 socket.on('receive_message', (data) => {
+    console.log('Received message:', data);
     addMessageToChatBox(data, data.sender === window.chatConfig.sender ? 'right' : 'left');
     scrollToBottom();
 });
@@ -64,6 +78,7 @@ messageForm.onsubmit = (e) => {
         // Disable button while sending
         sendButton.disabled = true;
         
+        console.log('Sending message:', { message, room_id: currentRoomId });
         socket.emit('send_message', {
             message: message,
             room_id: currentRoomId

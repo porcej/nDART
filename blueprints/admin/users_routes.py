@@ -154,7 +154,7 @@ def import_users():
         try:
             df = load_xlsx(file)
             # Get valid model fields
-            roles_fields = [f'is_{role.name.lower().replace(' ', '_')}' for role in Role.query.all()]
+            roles_fields = [f'is_{role.name.lower().replace(" ", "_")}' for role in Role.query.all()]
             user_fields = ['name', 'person', 'active', 'password'] + roles_fields
 
             # Filter DataFrame to only include valid model fields

@@ -1,0 +1,58 @@
+services:
+  ndart:
+    build: .
+    container_name: ndart-production
+    ports:
+      - "9030:9091"
+    environment:
+      - FLASK_APP=wsgi.py
+      - FLASK_ENV=production
+      - FLASK_RUN_HOST=0.0.0.0
+      - FLASK_RUN_PORT=9091
+      - DATABASE_URL=sqlite:////app/db/app.db
+      - SECRET_KEY=${SECRET_KEY:-this-is-a-production-secret-key-change-this}
+      - MED_TRACKER_DEBUG=False
+      - MED_TRACKER_HOST=0.0.0.0
+      - FLASK_PORT=9091
+      - LOGGING_PATH=/app/log
+      - LOGGING_LEVEL=20
+    volumes:
+      # Persist database and logs on host filesystem
+      - ./db:/app/db
+      - ./logs:/app/log
+      # To use your existing production database, uncomment and modify:
+      # - /path/to/your/production/database.db:/app/db/app.db:ro  # Read-only
+      # - /path/to/your/production/database.db:/app/db/app.db      # Read-write
+    command: [
+      "gunicorn",
+      "-k", "gevent",
+      "-w", "1",
+      "--worker-connections", "1000",
+      "--bind", "0.0.0.0:9091",
+      "--timeout", "120",
+      "--keep-alive", "5",
+      "--max-requests", "1000",
+      "--max-requests-jitter", "100",
+      "--preload",
+      "wsgi:app"
+    ]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    restart: unless-stopped
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+networks:
+  default:
+    name: ndart-production-network

@@ -38,3 +38,6 @@ tzdata
 XlsxWriter
 bleach
 requests
+gunicorn
+eventlet
+gevent

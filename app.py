@@ -42,6 +42,7 @@ from blueprints.main import main_bp
 from blueprints.chat import chat_bp
 from blueprints.admin import admin_bp
 from blueprints.internal_api import internal_api_bp
+from blueprints.health import health_bp
 # from blueprints.public_api import public_api_bp
 
 def create_app(config_class=Config):
@@ -70,6 +71,7 @@ def create_app(config_class=Config):
     app.register_blueprint(chat_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(internal_api_bp)
+    app.register_blueprint(health_bp)
     # app.register_blueprint(internal_api_v2_bp)
     # app.register_blueprint(public_api_bp)
 
@@ -130,15 +132,7 @@ def init_app(app):
     # *====================================================================*
     #         Chat
     # *====================================================================*
-    @app.route('/chat')
-    def chat():
-        """Chat room. The user's name and room must be stored in
-        the session."""
-        name = current_user.name
-        room = 'chat'
-        # if name == '' or room == '':
-        #     return redirect(url_for('.index'))
-        return render_template('chat.html', active_page='chat', name=name, room=room, is_admin=current_user.is_admin)
+    # Chat route moved to blueprints/chat/routes.py
 
 
     # *====================================================================*
@@ -154,32 +148,10 @@ def init_app(app):
         socketio.emit(msg_type, namespace='/api')
 
     # *====================================================================*
-    #         SocketIO Chat
+    #         SocketIO Chat - Moved to blueprints/chat/routes.py
     # *====================================================================*
-    @socketio.on('joined', namespace='/chat')
-    def joined(message):
-        """Sent by clients when they enter a room.
-        A status message is broadcast to all people in the room."""
-        room = 'chat'
-        join_room(room)
-        emit('status', {'msg': current_user.name + ' has entered the room.'}, room=room)
-
-
-    @socketio.on('text', namespace='/chat')
-    def text(message):
-        """Sent by a client when the user entered a new message.
-        The message is sent to all people in the room."""
-        room = 'chat'
-        emit('message', {'msg': current_user.name + ':' + message['msg']}, room=room)
-
-
-    @socketio.on('left', namespace='/chat')
-    def left(message):
-        """Sent by clients when they leave a room.
-        A status message is broadcast to all people in the room."""
-        room = 'chat'
-        leave_room(room)
-        emit('status', {'msg': current_user.name + ' has left the room.'}, room=room)
+    # Chat functionality is now handled in blueprints/chat/routes.py
+    # This prevents conflicts with the proper chat implementation
 
 
 

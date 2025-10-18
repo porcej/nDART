@@ -40,6 +40,7 @@ def handle_join(data):
 @socketio.on('send_message', namespace='/chat')
 @login_required
 def handle_send_message(data):
+    logger.info(f"Received send_message: {data}")
     room_id = data['room_id']
     # nick_name = data['nick_name']
     sender = current_user.name
@@ -56,7 +57,29 @@ def handle_send_message(data):
     db.session.add(message)
     db.session.commit()
 
-    emit('receive_message', message.to_dict(), room_id=room_id)
+    message_dict = message.to_dict()
+    logger.info(f"Emitting receive_message to room {room_id}: {message_dict}")
+    emit('receive_message', message_dict, room=room_id)
+
+@socketio.on('leave', namespace='/chat')
+@login_required
+def handle_leave(data):
+    room_id = data['room_id']
+    from flask_socketio import leave_room
+    leave_room(room_id)
+    emit('status', {'msg': f'{current_user.name} has left the room.'}, room=room_id)
+
+@socketio.on('typing', namespace='/chat')
+@login_required
+def handle_typing(data):
+    room_id = data['room_id']
+    emit('user_typing', {'user': current_user.name}, room=room_id, include_self=False)
+
+@socketio.on('stop_typing', namespace='/chat')
+@login_required
+def handle_stop_typing(data):
+    room_id = data['room_id']
+    emit('user_stop_typing', {'user': current_user.name}, room=room_id, include_self=False)
 
 @chat_bp.route('/upload', methods=['POST'])
 @login_required
