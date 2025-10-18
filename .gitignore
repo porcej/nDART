@@ -2,11 +2,33 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,linux,windows,python,flask
 
 ### APP SPECIFIC ###
+# Database and data files
 db/
 census/
 logs/
-/config.py
-/*.sh
+uploads/
+
+# Environment files (keep templates, ignore actual env files)
+.env
+.env.local
+.env.production
+.env.staging
+
+# Configuration files (keep examples, ignore actual configs)
+config.local.py
+
+# Shell scripts (keep templates, ignore custom ones)
+start-production.sh
+deploy.sh
+
+# Backup files
+*.backup
+*.bak
+*.old
+
+# Temporary files
+*.tmp
+*.temp
 
 ### Flask ###
 instance/*

@@ -85,10 +85,8 @@ curl http://localhost:9091/health
 | `SECRET_KEY` | `your-secret-key-change-this-in-production` | Flask secret key |
 | `DATABASE_URL` | `sqlite:///app/db/app.db` | Database connection string |
 | `FLASK_PORT` | `9091` | Application port |
-| `MED_TRACKER_DEBUG` | `false` | Debug mode |
-| `STAFFER_API_URL` | `http://staffer-api:8091/public-api/v1` | Staffer API URL |
-| `STAFFER_API_KEY` | `` | Staffer API key |
-| `STAFFER_API_ENABLED` | `false` | Enable Staffer API integration |
+| `NDART_DEBUG` | `false` | Debug mode |
+
 
 ### Using Production Database
 
@@ -141,7 +139,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 # Or set environment variables
-MED_TRACKER_DEBUG=true docker-compose up
+NDART_DEBUG=true docker-compose up
 ```
 
 ### Database Initialization
@@ -264,7 +262,7 @@ version: '3.8'
 services:
   ndart:
     environment:
-      - MED_TRACKER_DEBUG=true
+      - NDART_DEBUG=true
     volumes:
       - ./local-config:/app/config
 ```

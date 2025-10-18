@@ -86,7 +86,7 @@ Emitting receive_message to room ...: {...}
 ### Check Authentication:
 ```bash
 # Ensure you're logged in
-curl -c cookies.txt -b cookies.txt http://localhost:9091/chat
+curl -c cookies.txt -b cookies.txt http://localhost:5000/chat
 ```
 
 ### Check SocketIO Connection:
@@ -136,7 +136,7 @@ docker-compose ps
 docker-compose logs -f ndart
 
 # Test health endpoint
-curl http://localhost:9091/health
+curl http://localhost:5000/health
 ```
 
 The chat real-time messaging should now work properly! 🎉

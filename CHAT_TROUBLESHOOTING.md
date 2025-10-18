@@ -149,7 +149,7 @@ const socket = io.connect('//' + document.domain + ':' + location.port + '/chat'
 ### Check SocketIO Status
 ```bash
 # Test SocketIO endpoint
-curl -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:9091/socket.io/
+curl -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:5000/socket.io/
 ```
 
 ### Check Database Messages
@@ -211,7 +211,7 @@ class ChatMessage(db.Model):
 ### Health Check Endpoint
 ```bash
 # Check chat functionality
-curl http://localhost:9091/health
+curl http://localhost:5000/health
 ```
 
 ### Log Monitoring
@@ -234,14 +234,14 @@ def default_error_handler(e):
 ### 1. Use Production WSGI Server
 ```bash
 # Use Gunicorn with eventlet for production
-gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:9091 wsgi:app
+gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:5000 wsgi:app
 ```
 
 ### 2. Configure Reverse Proxy
 ```nginx
 # Nginx configuration for WebSocket support
 location /socket.io/ {
-    proxy_pass http://ndart-app:9091;
+    proxy_pass http://ndart-app:5000;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";

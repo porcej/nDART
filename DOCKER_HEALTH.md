@@ -35,7 +35,7 @@ Add this to your Dockerfile:
 ```dockerfile
 # Health check using the main health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:9091/health || exit 1
+  CMD curl -f http://localhost:5000/health || exit 1
 ```
 
 ### Docker Compose Health Check
@@ -46,9 +46,9 @@ services:
   ndart:
     build: .
     ports:
-      - "9091:9091"
+      - "9091:5000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -74,17 +74,17 @@ spec:
       - name: ndart
         image: ndart:latest
         ports:
-        - containerPort: 9091
+        - containerPort: 5000
         livenessProbe:
           httpGet:
             path: /health/live
-            port: 9091
+            port: 5000
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: 9091
+            port: 5000
           initialDelaySeconds: 5
           periodSeconds: 5
         env:
@@ -163,13 +163,13 @@ spec:
 ### Using curl
 ```bash
 # Test main health endpoint
-curl -f http://localhost:9091/health
+curl -f http://localhost:5000/health
 
 # Test readiness
-curl -f http://localhost:9091/health/ready
+curl -f http://localhost:5000/health/ready
 
 # Test liveness
-curl -f http://localhost:9091/health/live
+curl -f http://localhost:5000/health/live
 ```
 
 ### Using the test script
@@ -178,7 +178,7 @@ curl -f http://localhost:9091/health/live
 python test_health.py
 
 # Test against different server
-python test_health.py http://your-server:9091
+python test_health.py http://your-server:5000
 ```
 
 ## Configuration

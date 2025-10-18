@@ -19,9 +19,9 @@ services:
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-this-in-production}
       
       # Application Settings
-      - MED_TRACKER_DEBUG=false
-      - MED_TRACKER_HOST=0.0.0.0
-      - FLASK_PORT=9091
+      - NDART_DEBUG=false
+      - NDART_HOST=0.0.0.0
+      - FLASK_PORT=5000
       
      
       # Logging
@@ -38,7 +38,7 @@ services:
       # - /path/to/your/production/database.db:/app/db/app.db      # Read-write
       
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -54,17 +54,7 @@ services:
         reservations:
           memory: 256M
 
-  # Optional: Staffer API service (if you want to run it locally)
-  staffer-api:
-    image: staffer-api:latest  # Replace with actual image
-    container_name: ndart-staffer-api
-    ports:
-      - "8091:8091"
-    environment:
-      - API_KEY=${STAFFER_API_KEY:-}
-    profiles:
-      - staffer  # Only start with --profile staffer
-    restart: unless-stopped
+
 
 networks:
   default:

@@ -36,7 +36,7 @@ Edit `env.production` to configure your production environment:
 ```bash
 # Security - CHANGE THESE!
 SECRET_KEY=your-super-secret-production-key
-MED_TRACKER_DEBUG=False
+NDART_DEBUG=False
 
 # Database (choose one)
 DATABASE_URL=sqlite:////app/db/app.db
@@ -260,7 +260,7 @@ docker-compose -f docker-compose.production.yml run --rm ndart python app.py
 
 - [ ] **Security**
   - [ ] Changed default SECRET_KEY
-  - [ ] Set MED_TRACKER_DEBUG=False
+  - [ ] Set NDART_DEBUG=False
   - [ ] Configured secure database credentials
   - [ ] Set up SSL/TLS certificates
 
