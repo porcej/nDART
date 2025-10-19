@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, socketio
 from models import StatusReport, StationStatus, Assignment
 from datetime import datetime, UTC
 from . import admin_bp
@@ -54,6 +54,12 @@ def export_status_reports():
         output = BytesIO()
         df.to_csv(output, index=False)
         output.seek(0)
+        
+        # Emit SocketIO event for export
+        socketio.emit('status_reports_exported', {
+            'count': len(status_reports),
+            'filename': f'status_reports_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        }, namespace='/api')
         
         # Return CSV file
         return send_file(
@@ -137,8 +143,17 @@ def import_status_reports():
         
         if errors:
             flash(f'Imported {imported_count} status reports. Errors: {"; ".join(errors[:5])}', 'warning')
+            socketio.emit('status_reports_imported', {
+                'count': imported_count,
+                'errors': errors[:5],
+                'success': False
+            }, namespace='/api')
         else:
             flash(f'Successfully imported {imported_count} status reports', 'success')
+            socketio.emit('status_reports_imported', {
+                'count': imported_count,
+                'success': True
+            }, namespace='/api')
         
         return redirect(url_for('admin.status_reports'))
         
@@ -158,6 +173,11 @@ def clear_status_reports():
         # Delete all status reports
         StatusReport.query.delete()
         db.session.commit()
+        
+        # Emit SocketIO event for clear
+        socketio.emit('status_reports_cleared', {
+            'count': status_reports_count
+        }, namespace='/api')
         
         flash(f'Successfully cleared {status_reports_count} status reports', 'success')
         return redirect(url_for('admin.status_reports'))

@@ -4,6 +4,9 @@ import { initSocketMessages } from './sio.js';
 const DATA_TYPE = 'observation';
 const TABLE_PREFIX = 'side_';
 let observationsTable;
+
+// Make observationsTable globally accessible for SocketIO refresh
+window.observationsTable = null;
 let openObservationsVals = null;
 const pendingObservationIds = new Set();
 
@@ -160,6 +163,9 @@ observationsTable = new DataTable('#observations-table', {
         style: 'single'
     }
 });
+
+// Make observationsTable globally accessible for SocketIO refresh
+window.observationsTable = observationsTable;
 
 observationsEditor.on('open', function() {
     openObservationsVals = observationsEditor.get();

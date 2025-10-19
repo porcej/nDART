@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, socketio
 from models import Event, Agency, Assignment
 from datetime import datetime, UTC
 from . import admin_bp
@@ -60,6 +60,12 @@ def export_events():
         output = BytesIO()
         df.to_csv(output, index=False)
         output.seek(0)
+        
+        # Emit SocketIO event for export
+        socketio.emit('events_exported', {
+            'count': len(events),
+            'filename': f'events_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        }, namespace='/api')
         
         # Return CSV file
         return send_file(
@@ -160,8 +166,17 @@ def import_events():
         
         if errors:
             flash(f'Imported {imported_count} events. Errors: {"; ".join(errors[:5])}', 'warning')
+            socketio.emit('events_imported', {
+                'count': imported_count,
+                'errors': errors[:5],
+                'success': False
+            }, namespace='/api')
         else:
             flash(f'Successfully imported {imported_count} events', 'success')
+            socketio.emit('events_imported', {
+                'count': imported_count,
+                'success': True
+            }, namespace='/api')
         
         return redirect(url_for('admin.events'))
         
@@ -181,6 +196,11 @@ def clear_events():
         # Delete all events
         Event.query.delete()
         db.session.commit()
+        
+        # Emit SocketIO event for clear
+        socketio.emit('events_cleared', {
+            'count': events_count
+        }, namespace='/api')
         
         flash(f'Successfully cleared {events_count} events', 'success')
         return redirect(url_for('admin.events'))

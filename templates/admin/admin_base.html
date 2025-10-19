@@ -10,4 +10,9 @@
 
 {% block content %}
 {% block admin_content %}{% endblock %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/data-management-sio.js') }}"></script>
+{% block admin_scripts %}{% endblock %}
 {% endblock %} 

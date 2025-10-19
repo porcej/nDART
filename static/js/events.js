@@ -7,6 +7,9 @@ const DATA_TYPE = 'event';
 
 
 let eventsTable;
+
+// Make eventsTable globally accessible for SocketIO refresh
+window.eventsTable = null;
 let openEventsVals = null;
 const pendingEventIds = new Set();
 
@@ -273,6 +276,9 @@ eventsTable = new DataTable('#events-table', {
         }
     }
 });
+
+// Make eventsTable globally accessible for SocketIO refresh
+window.eventsTable = eventsTable;
 
 // Initialize filter dropdowns after table is created
 buildFilterDropDown('reporterFilter', 'assignments', 3, eventsTable);

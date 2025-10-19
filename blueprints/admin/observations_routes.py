@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from extensions import db
+from extensions import db, socketio
 from models import Observation, ObservationsCategory, Assignment
 from datetime import datetime, UTC
 from . import admin_bp
@@ -56,6 +56,12 @@ def export_observations():
         output = BytesIO()
         df.to_csv(output, index=False)
         output.seek(0)
+        
+        # Emit SocketIO event for export
+        socketio.emit('observations_exported', {
+            'count': len(observations),
+            'filename': f'observations_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        }, namespace='/api')
         
         # Return CSV file
         return send_file(
@@ -141,8 +147,17 @@ def import_observations():
         
         if errors:
             flash(f'Imported {imported_count} observations. Errors: {"; ".join(errors[:5])}', 'warning')
+            socketio.emit('observations_imported', {
+                'count': imported_count,
+                'errors': errors[:5],
+                'success': False
+            }, namespace='/api')
         else:
             flash(f'Successfully imported {imported_count} observations', 'success')
+            socketio.emit('observations_imported', {
+                'count': imported_count,
+                'success': True
+            }, namespace='/api')
         
         return redirect(url_for('admin.observations'))
         
@@ -162,6 +177,11 @@ def clear_observations():
         # Delete all observations
         Observation.query.delete()
         db.session.commit()
+        
+        # Emit SocketIO event for clear
+        socketio.emit('observations_cleared', {
+            'count': observations_count
+        }, namespace='/api')
         
         flash(f'Successfully cleared {observations_count} observations', 'success')
         return redirect(url_for('admin.observations'))

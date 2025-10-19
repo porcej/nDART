@@ -4,6 +4,9 @@ import { initSocketMessages } from './sio.js';
 const DATA_TYPE = 'status';
 
 let statusReportsTable;
+
+// Make statusReportsTable globally accessible for SocketIO refresh
+window.statusReportsTable = null;
 let openStatusReportVals = null; 
 const pendingStatusReportIds = new Set();
 const selectedVolunteersForUpdate = new Set(); // Track which volunteers should be updated in staffer
@@ -170,6 +173,9 @@ statusReportsTable = new DataTable('#status-reports-table', {
         selector: 'td:first-child'
     }
 });
+
+// Make statusReportsTable globally accessible for SocketIO refresh
+window.statusReportsTable = statusReportsTable;
 
 statusReportsEditor.on('open', function() {
     openStatusReportVals = statusReportsEditor.get();
