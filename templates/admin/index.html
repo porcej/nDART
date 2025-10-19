@@ -200,6 +200,22 @@
                 </div>
             </div>
         </div>
+
+        <!-- Status Reports Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Status Reports</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ status_reports_count }}
+                    </div>
+                    <div class="text-muted mb-3">Total Status Reports</div>
+                    <a href="{{ url_for('admin.status_reports') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-clipboard-data me-2"></i>Manage Status Reports
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %} 
