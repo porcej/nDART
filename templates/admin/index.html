@@ -184,6 +184,22 @@
                 </div>
             </div>
         </div>
+
+        <!-- Observations Card -->
+        <div class="col-12 col-sm-6 col-xl-4">
+            <div class="card text-center h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title h5 mb-3">Observations</h3>
+                    <div class="align-items-center mb-2 display-4 fw-bold me-2">
+                        {{ observations_count }}
+                    </div>
+                    <div class="text-muted mb-3">Total Observations</div>
+                    <a href="{{ url_for('admin.observations') }}" class="btn btn-primary w-100">
+                        <i class="bi bi-eye me-2"></i>Manage Observations
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %} 
