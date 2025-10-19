@@ -43,6 +43,8 @@ from blueprints.chat import chat_bp
 from blueprints.admin import admin_bp
 from blueprints.internal_api import internal_api_bp
 from blueprints.health import health_bp
+from blueprints.root import root_bp
+from blueprints.socketio_api import socketio_api_bp
 # from blueprints.public_api import public_api_bp
 
 def create_app(config_class=Config):
@@ -66,12 +68,14 @@ def create_app(config_class=Config):
     socketio.init_app(app)
     
     # Register blueprints
+    app.register_blueprint(root_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(internal_api_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(socketio_api_bp)
     # app.register_blueprint(internal_api_v2_bp)
     # app.register_blueprint(public_api_bp)
 
@@ -96,62 +100,13 @@ def create_app(config_class=Config):
 
 
 def init_app(app):
-
-
-
-
-    # *====================================================================*
-    #         ADMIN
-    # *====================================================================*
-    # Route for uploading xlsx file and removing all rows
-    @app.route('/admin', methods=['GET', 'POST'])
-    @login_required
-    def admin():
-        if not current_user.is_admin:
-            return redirect(url_for('events'))
-        if request.method == 'POST':
-            if 'remove-events' in request.form:
-                remove_all_rows('events')
-                return f'All events removed.'
-            elif 'remove-observations' in request.form:
-                remove_all_rows('observations')
-                return f'All observations removed.'
-            else:
-                return 'I am not a teapot.'
-
-        return render_template('admin.html', active_page='admin', is_admin=current_user.is_admin)
-
-    # *--------------------------------------------------------------------*
-    #         End User Routes (Web Pages)
-    # *--------------------------------------------------------------------*
-    @app.route('/')
-    @login_required
-    def app_index():
-        return redirect(url_for('main_bp.dashboard'))
-
-    # *====================================================================*
-    #         Chat
-    # *====================================================================*
-    # Chat route moved to blueprints/chat/routes.py
-
-
-    # *====================================================================*
-    #         SocketIO API
-    # *====================================================================*
-    # Handler for a message recieved over 'connect' channel
-    @socketio.on('connect', namespace="/api")
-    def test_connect():
-        emit('after connect',  {'data':'Lets dance'})
-
-    def send_sio_msg(msg_type, msg, room=None):
-        broadcast = room is None
-        socketio.emit(msg_type, namespace='/api')
-
-    # *====================================================================*
-    #         SocketIO Chat - Moved to blueprints/chat/routes.py
-    # *====================================================================*
-    # Chat functionality is now handled in blueprints/chat/routes.py
-    # This prevents conflicts with the proper chat implementation
+    """
+    Initialize application-specific functionality.
+    
+    This function is now empty as all routes have been moved to blueprints.
+    It's kept for backward compatibility and potential future use.
+    """
+    pass
 
 
 

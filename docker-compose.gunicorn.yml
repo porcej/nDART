@@ -1,7 +1,7 @@
 services:
   ndart:
     build: .
-    container_name: ndart-production
+    container_name: ndart-gunicorn
     ports:
       - "9030:5000"
     environment:
@@ -10,7 +10,7 @@ services:
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_RUN_PORT=5000
       - DATABASE_URL=sqlite:////app/db/app.db
-      - SECRET_KEY=${SECRET_KEY}
+      - SECRET_KEY=${SECRET_KEY:-this-is-a-production-secret-key-change-this}
       - NDART_DEBUG=False
       - NDART_HOST=0.0.0.0
       - FLASK_PORT=5000
@@ -23,7 +23,7 @@ services:
       # To use your existing production database, uncomment and modify:
       # - /path/to/your/production/database.db:/app/db/app.db:ro  # Read-only
       # - /path/to/your/production/database.db:/app/db/app.db      # Read-write
-    command: ["python", "app.py"]
+    command: ["python", "socketio_server.py"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -43,4 +43,4 @@ services:
 
 networks:
   default:
-    name: ndart-production-network
+    name: ndart-gunicorn-network

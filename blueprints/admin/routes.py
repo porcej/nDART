@@ -10,6 +10,15 @@ import pandas as pd
 from io import BytesIO
 
 
+def remove_all_rows(table_name):
+    """Helper function to remove all rows from a table."""
+    if table_name == 'events':
+        Event.query.delete()
+    elif table_name == 'observations':
+        Observation.query.delete()
+    db.session.commit()
+
+
 # Dashboard
 @admin_bp.route('/')
 @login_required
@@ -46,3 +55,23 @@ def index():
                          events_count=events_count,
                          observations_count=observations_count,
                          status_reports_count=status_reports_count)
+
+
+# Legacy admin route (moved from app.py)
+@admin_bp.route('/admin', methods=['GET', 'POST'])
+@login_required
+def admin():
+    """Legacy admin route for uploading xlsx file and removing all rows."""
+    if not current_user.is_admin:
+        return redirect(url_for('main_bp.dashboard'))
+    if request.method == 'POST':
+        if 'remove-events' in request.form:
+            remove_all_rows('events')
+            return f'All events removed.'
+        elif 'remove-observations' in request.form:
+            remove_all_rows('observations')
+            return f'All observations removed.'
+        else:
+            return 'I am not a teapot.'
+
+    return render_template('admin.html', active_page='admin', is_admin=current_user.is_admin)
