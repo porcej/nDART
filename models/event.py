@@ -17,6 +17,7 @@ class Event(db.Model):
     agency_arrival = db.Column(db.DateTime, nullable=True)
     resolved = db.Column(db.DateTime, nullable=True)
     notes = db.Column(db.Text, nullable=True)
+    gender = db.Column(db.String(10), nullable=True)
     delete_flag = db.Column(db.Boolean, default=False)
     
     # Add these relationships after the columns
@@ -39,5 +40,6 @@ class Event(db.Model):
             'agency_arrival': self.agency_arrival.strftime("%H:%M") if self.agency_arrival else None,
             'resolved': self.resolved.strftime("%H:%M") if self.resolved else None,
             'notes': self.notes,
+            'gender': self.gender,
             'delete_flag': self.delete_flag
         }
