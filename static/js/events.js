@@ -93,6 +93,17 @@ const eventsEditor = new DataTable.Editor({
             name: 'bib'
         },
         {
+            label: 'Gender',
+            name: 'gender',
+            type: 'select',
+            options: [
+                { label: '', value: '' },
+                { label: 'Male', value: 'Male' },
+                { label: 'Female', value: 'Female' },
+                { label: 'Unknown', value: 'Unknown' },
+            ]
+        },
+        {
             label: 'Location',
             name: 'location'
         },
@@ -188,6 +199,7 @@ const events_cols = [
     },
     { data: 'time_in' },
     { data: 'bib' },
+    { data: 'gender' },
     { data: 'location' },
     { 
         data: 'reporter_id',
