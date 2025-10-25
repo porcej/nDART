@@ -17,29 +17,37 @@ const pendingEventIds = new Set();
 const PENDING_CLEANUP_TIMEOUT = 30000; // 30 seconds
 const pendingTimeouts = new Map();
 
+const timeColIndex = 1;
+const bibColIndex = 2;
+const genderColIndex = 3;
+const locationColIndex = 4;
+const reportedByColIndex = 5;
+const agencyColIndex = 6;
+const notifiedColIndex = 7;
+const arrivalColIndex = 8;
+const resolvedColIndex = 9;
+const notedColIndex = 10;
+
 
 
 const resolvedRadioAll = document.getElementById('resolvedRadioAll');
 if (resolvedRadioAll) {
     resolvedRadioAll.addEventListener('change', function() {
-        const colIndex = 8;
-        eventsTable.column(colIndex).search('').draw();
+        eventsTable.column(resolvedColIndex).search('').draw();
     });
 }
 
 const resolvedRadioResolved = document.getElementById('resolvedRadioResolved');
 if (resolvedRadioResolved) {
     resolvedRadioResolved.addEventListener('change', function() {
-        const colIndex = 8;
-        eventsTable.column(colIndex).search('^.+$', true, false).draw();
+        eventsTable.column(resolvedColIndex).search('^.+$', true, false).draw();
     });
 }
 
 const resolvedRadioInProgress = document.getElementById('resolvedRadioInProgress');
 if (resolvedRadioInProgress) {
     resolvedRadioInProgress.addEventListener('change', function() {
-        const colIndex = 8;
-        eventsTable.column(colIndex).search('^$', true, false).draw();
+        eventsTable.column(resolvedColIndex).search('^$', true, false).draw();
     });
 }
 
@@ -293,8 +301,8 @@ eventsTable = new DataTable('#events-table', {
 window.eventsTable = eventsTable;
 
 // Initialize filter dropdowns after table is created
-buildFilterDropDown('reporterFilter', 'assignments', 3, eventsTable);
-buildFilterDropDown('agencyFilter', 'agencies', 5, eventsTable);
+buildFilterDropDown('reporterFilter', 'assignments', reportedByColIndex, eventsTable);
+buildFilterDropDown('agencyFilter', 'agencies', agencyColIndex, eventsTable);
 
 // Activate the bubble editor on click of a table cell
 eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {
