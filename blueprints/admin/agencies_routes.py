@@ -44,11 +44,14 @@ def create_agency():
         db.session.add(agency)
         db.session.commit()
         
-        return jsonify(agency.to_dict()), 201
+        return jsonify({
+            'success': 'Agency created successfully.',
+            'data': agency.to_dict(),
+        }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create agency.'}), 400
 
 @admin_bp.route('/agencies/<id>', methods=['PUT'])
 @login_required
@@ -74,11 +77,14 @@ def update_agency(id):
             
         db.session.commit()
         
-        return jsonify(agency.to_dict())
+        return jsonify({
+            'success': 'Agency updated successfully.',
+            'data': agency.to_dict(),
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update agency.'}), 400
 
 @admin_bp.route('/agencies/<id>', methods=['DELETE'])
 @login_required
@@ -90,11 +96,11 @@ def delete_agency(id):
         db.session.delete(agency)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Agency deleted successfully'})
+        return jsonify({'success': 'Agency deleted successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete agency.'}), 400
     
 @admin_bp.route('/agencies/export')
 @login_required

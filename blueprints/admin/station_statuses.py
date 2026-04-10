@@ -47,11 +47,14 @@ def create_station_status():
         db.session.add(station_status)
         db.session.commit()
         
-        return jsonify(station_status.to_dict()), 201
+        return jsonify({
+            'success': 'Station status created successfully.',
+            'data': station_status.to_dict(),
+        }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create station status.'}), 400
 
 @admin_bp.route('/station-status/<id>', methods=['PUT'])
 @login_required
@@ -74,11 +77,14 @@ def update_station_status(id):
             
         db.session.commit()
         
-        return jsonify(station_status.to_dict())
+        return jsonify({
+            'success': 'Station status updated successfully.',
+            'data': station_status.to_dict(),
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update station status.'}), 400
 
 @admin_bp.route('/station-status/<id>', methods=['DELETE'])
 @login_required
@@ -90,11 +96,11 @@ def delete_station_status(id):
         db.session.delete(station_status)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Station status deleted successfully'})
+        return jsonify({'success': 'Station status deleted successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete station status.'}), 400
 
 @admin_bp.route('/station-status/export')
 @login_required
@@ -154,4 +160,4 @@ def remove_all_station_status():
     """Remove all station statuses from the database."""
     StationStatus.query.delete()
     db.session.commit()
-    return 'All station statuses removed from database successfully!'
+    return jsonify({'success': 'All station statuses removed from database successfully!'}), 200

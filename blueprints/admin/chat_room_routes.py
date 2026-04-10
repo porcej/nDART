@@ -57,11 +57,14 @@ def create_chat_room():
         db.session.add(chat_room)
         db.session.commit()
         
-        return jsonify(chat_room.to_dict()), 201
+        return jsonify({
+            'success': 'Chat room created successfully.',
+            'data': chat_room.to_dict(),
+        }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create chat room.'}), 400
 
 @admin_bp.route('/chat-rooms/<id>', methods=['PUT'])
 @login_required
@@ -91,11 +94,14 @@ def update_chat_room(id):
             
         db.session.commit()
         
-        return jsonify(chat_room.to_dict())
+        return jsonify({
+            'success': 'Chat room updated successfully.',
+            'data': chat_room.to_dict(),
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update chat room.'}), 400
 
 @admin_bp.route('/chat-rooms/<id>', methods=['DELETE'])
 @login_required
@@ -107,11 +113,11 @@ def delete_chat_room(id):
         db.session.delete(chat_room)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Chat room deleted successfully'})
+        return jsonify({'success': 'Chat room deleted successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete chat room.'}), 400
 
 @admin_bp.route('/chat-rooms/<id>/clear-messages', methods=['DELETE'])
 @login_required
@@ -125,8 +131,8 @@ def clear_chat_room_messages(id):
         ChatMessage.query.filter_by(room_id=id).delete()
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Messages cleared successfully'})
+        return jsonify({'success': 'Messages cleared successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to clear chat room messages.'}), 400

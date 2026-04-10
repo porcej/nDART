@@ -50,11 +50,14 @@ def create_role():
         db.session.add(role)
         db.session.commit()
         
-        return jsonify(role.to_dict()), 201
+        return jsonify({
+            'success': 'Role created successfully.',
+            'data': role.to_dict(),
+        }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create role.'}), 400
 
 @admin_bp.route('/roles/<id>', methods=['PUT'])
 @login_required
@@ -88,11 +91,14 @@ def update_role(id):
             
         db.session.commit()
         
-        return jsonify(role.to_dict())
+        return jsonify({
+            'success': 'Role updated successfully.',
+            'data': role.to_dict(),
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update role.'}), 400
 
 @admin_bp.route('/roles/<id>', methods=['DELETE'])
 @login_required
@@ -113,8 +119,8 @@ def delete_role(id):
         db.session.delete(role)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Role deleted successfully'})
+        return jsonify({'success': 'Role deleted successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete role.'}), 400

@@ -36,27 +36,37 @@ def get_assignment(id):
 @admin_required
 def create_assignment():
     """Create a new assignment."""
-    data = request.get_json()
-    assignment = Assignment(**data)
-
-    db.session.add(assignment)
-    db.session.commit()
-
-    return jsonify(assignment.to_dict()), 201
+    try:
+        data = request.get_json()
+        assignment = Assignment(**data)
+        db.session.add(assignment)
+        db.session.commit()
+        return jsonify({
+            'success': 'Assignment created successfully.',
+            'data': assignment.to_dict(),
+        }), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create assignment.'}), 400
 
 @admin_bp.route('/assignments/<id>', methods=['PUT'])
 @login_required
 @admin_required
 def update_assignment(id):
     """Update an existing assignment."""
-    data = request.get_json()
-    assignment = Assignment.query.get_or_404(id)
-    for key, value in data.items():
-        setattr(assignment, key, value)
-
-    db.session.commit()
-
-    return jsonify(assignment.to_dict()), 200
+    try:
+        data = request.get_json()
+        assignment = Assignment.query.get_or_404(id)
+        for key, value in data.items():
+            setattr(assignment, key, value)
+        db.session.commit()
+        return jsonify({
+            'success': 'Assignment updated successfully.',
+            'data': assignment.to_dict(),
+        }), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update assignment.'}), 400
 
 @admin_bp.route('/assignments/<id>', methods=['DELETE'])
 @login_required
@@ -68,11 +78,11 @@ def delete_assignment(id):
         db.session.delete(assignment)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Assignment deleted successfully'})
+        return jsonify({'success': 'Assignment deleted successfully.'})
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete assignment.'}), 400
 
 @admin_bp.route('/assignments/export')
 @login_required

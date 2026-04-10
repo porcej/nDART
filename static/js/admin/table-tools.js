@@ -43,7 +43,7 @@ export async function sendRequest({ url, method, data = null, errHandler = null,
             
             if (!res.ok) {
                 const error = await res.json();
-                throw new Error(error.message || 'Request failed');
+                throw new Error(error.error || error.message || 'Request failed');
             }
             
             return await res.json();

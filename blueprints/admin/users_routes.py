@@ -63,11 +63,14 @@ def create_user():
         db.session.add(user)
         db.session.commit()
         
-        return jsonify(user.to_dict()), 201
+        return jsonify({
+            'success': 'User created successfully.',
+            'data': user.to_dict(),
+        }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create user.'}), 400
 
 @admin_bp.route('/users/<id>', methods=['PUT'])
 @login_required
@@ -109,11 +112,14 @@ def update_user(id):
                     user.add_role(role)
                     
         db.session.commit()
-        return jsonify(user.to_dict())
+        return jsonify({
+            'success': 'User updated successfully.',
+            'data': user.to_dict(),
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update user.'}), 400
 
 @admin_bp.route('/users/<id>', methods=['DELETE'])
 @login_required
@@ -129,11 +135,11 @@ def delete_user(id):
         db.session.delete(user)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'User deleted successfully'})
+        return jsonify({'success': 'User deleted successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete user.'}), 400
     
 @admin_bp.route('/users/export')
 @login_required
@@ -237,4 +243,4 @@ def get_user_roles():
             'roles': [{'role_id': role.id, 'role_name': role.name} for role in user.roles]
         })
         
-    return jsonify(user_roles)
+    return jsonify({'success': 'User roles fetched successfully.', 'data': user_roles})
