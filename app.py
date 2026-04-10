@@ -65,6 +65,7 @@ def create_app(config_class=None):
     app.config.from_object(config_class)
     if hasattr(config_class, 'init_app'):
         config_class.init_app(app)
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
     
     # Initialize extensions
     db.init_app(app)
@@ -73,6 +74,15 @@ def create_app(config_class=None):
     login_manager.init_app(app)
     csrf.init_app(app)
     socketio.init_app(app)
+
+    @app.before_request
+    def selective_csrf_protect():
+        if request.method in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+            return None
+        # Flask-SocketIO transport requests do not carry form/header CSRF tokens.
+        if request.path.startswith('/socket.io'):
+            return None
+        csrf.protect()
     
     # Register blueprints
     app.register_blueprint(root_bp)

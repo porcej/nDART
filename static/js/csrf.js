@@ -9,10 +9,9 @@
         return !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(m);
     }
 
-    const token = getCsrfToken();
-
     // Ensure classic HTML forms always carry csrf_token.
     function addHiddenTokenToForms() {
+        const token = getCsrfToken();
         if (!token) return;
         document.querySelectorAll('form').forEach((form) => {
             if (form.querySelector('input[name="csrf_token"]')) return;
@@ -27,6 +26,7 @@
     // Wrap fetch so all mutating requests include CSRF header.
     const nativeFetch = window.fetch.bind(window);
     window.fetch = function (input, init = {}) {
+        const token = getCsrfToken();
         const method = (init && init.method) || 'GET';
         const headers = new Headers((init && init.headers) || {});
         if (token && shouldAttach(method) && !headers.has('X-CSRFToken')) {
@@ -35,10 +35,34 @@
         return nativeFetch(input, { ...init, headers });
     };
 
+    // Wrap XHR so libraries that bypass fetch/jQuery (e.g. some DataTables paths)
+    // still get CSRF headers on mutating requests.
+    const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function (method, url, ...rest) {
+        this.__csrfMethod = method;
+        this.__csrfUrl = url;
+        return originalOpen.call(this, method, url, ...rest);
+    };
+
+    XMLHttpRequest.prototype.send = function (body) {
+        const token = getCsrfToken();
+        if (token && shouldAttach(this.__csrfMethod)) {
+            try {
+                this.setRequestHeader('X-CSRFToken', token);
+            } catch (e) {
+                // Ignore header failures for non-HTTP transports.
+            }
+        }
+        return originalSend.call(this, body);
+    };
+
     // jQuery/DataTables editor requests.
-    if (window.jQuery && token) {
+    if (window.jQuery) {
         window.jQuery.ajaxSetup({
             beforeSend: function (xhr, settings) {
+                const token = getCsrfToken();
                 if (shouldAttach(settings && settings.type)) {
                     xhr.setRequestHeader('X-CSRFToken', token);
                 }
