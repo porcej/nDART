@@ -1,9 +1,11 @@
+from collections import Counter
+
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from extensions import db
 from models import User, Role
 from . import admin_bp
-from .utils import admin_required, export_to_xlsx, save_to_database, load_xlsx
+from .utils import admin_required, export_to_xlsx, save_to_database, load_xlsx, clean_str, clean_bool
 
 
 # ---------------
@@ -167,11 +169,26 @@ def import_users():
             valid_columns = [col for col in df.columns if col in user_fields]
             
             df = df[valid_columns]
-            new_users = []
-            
+            normalized_names = []
             for _, row in df.iterrows():
                 data = row.to_dict()
-                username = data['name'] if 'name' in data else None
+                name = clean_str(data.get('name'))
+                if not name:
+                    continue
+                normalized_names.append(name)
+
+            duplicate_names = sorted(
+                [n for n, c in Counter(normalized_names).items() if c > 1]
+            )
+            if duplicate_names:
+                return jsonify({
+                    'error': f'Duplicate username(s) in file: {", ".join(duplicate_names)}',
+                }), 400
+
+            new_users = []
+            for _, row in df.iterrows():
+                data = row.to_dict()
+                username = clean_str(data.get('name'))
                 if not username:
                     continue
 
@@ -180,17 +197,18 @@ def import_users():
                 if existing_user:
                     continue
 
-                password = data['password'] if 'password' in data and data['password'] not in [None, ''] else default_password
+                pwd_cell = clean_str(data.get('password'))
+                password = pwd_cell if pwd_cell else default_password
 
                 if password in [None, '']:
                     continue
 
-                person = data['person'] if 'person' in data else None
-                active = data['active'] if 'active' in data else False
+                person = clean_str(data.get('person'))
+                active = clean_bool(data.get('active'), False)
                 new_user = User(name=username, person=person, active=active)
 
                 for role_field in roles_fields:
-                    if role_field in data and data[role_field]:
+                    if role_field in data and clean_bool(data.get(role_field), False):
                         role = Role.query.filter_by(name=role_field.replace('is_', '')).first()
                         if role:
                             new_user.add_role(role)
