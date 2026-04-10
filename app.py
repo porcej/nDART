@@ -30,7 +30,7 @@ from werkzeug.utils import secure_filename
 
 
 from config import Config, get_config
-from extensions import db, migrate, login_manager, jwt, socketio
+from extensions import db, migrate, login_manager, jwt, socketio, csrf
 from models import User
 
 
@@ -71,6 +71,7 @@ def create_app(config_class=None):
     migrate.init_app(app, db)
     jwt.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
     socketio.init_app(app)
     
     # Register blueprints

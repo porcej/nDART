@@ -120,7 +120,7 @@ def import_station_status():
             valid_columns = [col for col in df.columns if col in station_status_fields]
             
             df = df[valid_columns]
-            new_station_status_count = 0
+            new_station_statuses = []
             
             for _, row in df.iterrows():
                 data = row.to_dict()
@@ -134,13 +134,15 @@ def import_station_status():
                     continue
 
                 new_station_status = StationStatus(name=name, sort_order=data['sort_order'], enabled=data['enabled'] if 'enabled' in data else True)
+                new_station_statuses.append(new_station_status)
 
-                db.session.add(new_station_status)
+            if new_station_statuses:
+                db.session.add_all(new_station_statuses)
                 db.session.commit()
-                new_station_status_count += 1
 
-            return jsonify({'success': f'{new_station_status_count} station statuses created successfully!'}), 200
+            return jsonify({'success': f'{len(new_station_statuses)} station statuses created successfully!'}), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400

@@ -161,7 +161,7 @@ def import_users():
             valid_columns = [col for col in df.columns if col in user_fields]
             
             df = df[valid_columns]
-            new_user_count = 0
+            new_users = []
             
             for _, row in df.iterrows():
                 data = row.to_dict()
@@ -192,12 +192,15 @@ def import_users():
                 if password:
                     new_user.set_password(password)
 
-                db.session.add(new_user)
-                db.session.commit()
-                new_user_count += 1
+                new_users.append(new_user)
 
-            return jsonify({'success': f'{new_user_count} users created successfully!'}), 200
+            if new_users:
+                db.session.add_all(new_users)
+                db.session.commit()
+
+            return jsonify({'success': f'{len(new_users)} users created successfully!'}), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400

@@ -108,7 +108,7 @@ def import_events():
             flash(f'Missing required columns: {", ".join(missing_columns)}', 'error')
             return redirect(url_for('admin.events'))
         
-        imported_count = 0
+        imported_events = []
         errors = []
         
         for index, row in df.iterrows():
@@ -155,32 +155,34 @@ def import_events():
                     notes=row.get('Notes', '') if pd.notna(row.get('Notes', '')) else None
                 )
                 
-                db.session.add(event)
-                imported_count += 1
+                imported_events.append(event)
                 
             except Exception as e:
                 errors.append(f'Row {index + 1}: {str(e)}')
                 continue
         
-        db.session.commit()
-        
         if errors:
-            flash(f'Imported {imported_count} events. Errors: {"; ".join(errors[:5])}', 'warning')
+            db.session.rollback()
+            flash(f'Import failed. No events were created. Errors: {"; ".join(errors[:5])}', 'warning')
             socketio.emit('events_imported', {
-                'count': imported_count,
+                'count': 0,
                 'errors': errors[:5],
                 'success': False
             }, namespace='/api')
         else:
-            flash(f'Successfully imported {imported_count} events', 'success')
+            if imported_events:
+                db.session.add_all(imported_events)
+                db.session.commit()
+            flash(f'Successfully imported {len(imported_events)} events', 'success')
             socketio.emit('events_imported', {
-                'count': imported_count,
+                'count': len(imported_events),
                 'success': True
             }, namespace='/api')
         
         return redirect(url_for('admin.events'))
         
     except Exception as e:
+        db.session.rollback()
         flash(f'Error importing events: {str(e)}', 'error')
         return redirect(url_for('admin.events'))
 

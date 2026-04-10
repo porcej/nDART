@@ -115,7 +115,7 @@ def import_observations_categories():
             valid_columns = [col for col in df.columns if col in observations_category_fields]
             
             df = df[valid_columns]
-            new_observations_category_count = 0
+            new_observations_categories = []
             
             for _, row in df.iterrows():
                 data = row.to_dict()
@@ -134,13 +134,15 @@ def import_observations_categories():
                     enabled=data['enabled'] if 'enabled' in data else True,
                     description=data['description'] if 'description' in data else None
                 )
+                new_observations_categories.append(new_observations_category)
 
-                db.session.add(new_observations_category)
+            if new_observations_categories:
+                db.session.add_all(new_observations_categories)
                 db.session.commit()
-                new_observations_category_count += 1
 
-            return jsonify({'success': f'{new_observations_category_count} observations categories created successfully!'}), 200
+            return jsonify({'success': f'{len(new_observations_categories)} observations categories created successfully!'}), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400

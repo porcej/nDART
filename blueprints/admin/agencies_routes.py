@@ -120,7 +120,7 @@ def import_agencies():
             valid_columns = [col for col in df.columns if col in agency_fields]
             
             df = df[valid_columns]
-            new_agency_count = 0
+            new_agencies = []
             
             for _, row in df.iterrows():
                 data = row.to_dict()
@@ -134,13 +134,15 @@ def import_agencies():
                     continue
 
                 new_agency = Agency(name=name, description=data['description'], sort_order=data['sort_order'], enabled=data['enabled'] if 'enabled' in data else True)
+                new_agencies.append(new_agency)
 
-                db.session.add(new_agency)
+            if new_agencies:
+                db.session.add_all(new_agencies)
                 db.session.commit()
-                new_agency_count += 1
 
-            return jsonify({'success': f'{new_agency_count} agencies created successfully!'}), 200
+            return jsonify({'success': f'{len(new_agencies)} agencies created successfully!'}), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400
