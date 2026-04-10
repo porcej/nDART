@@ -21,6 +21,9 @@ config.local.py
 start-production.sh
 deploy.sh
 
+# Docker Compose (keep production/example files; ignore local override)
+docker-compose.yml
+
 # Backup files
 *.backup
 *.bak
