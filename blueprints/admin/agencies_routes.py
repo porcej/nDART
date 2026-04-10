@@ -1,3 +1,5 @@
+from collections import Counter
+
 from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required
 from extensions import db
@@ -127,10 +129,28 @@ def import_agencies():
             
             df = df[valid_columns]
             new_agencies = []
+            normalized_names = []
             
             for _, row in df.iterrows():
                 data = row.to_dict()
                 name = data['name'] if 'name' in data else None
+                if not name:
+                    continue
+                name = str(name).strip()
+                if not name:
+                    continue
+                normalized_names.append(name)
+
+            duplicate_names = sorted([name for name, count in Counter(normalized_names).items() if count > 1])
+            if duplicate_names:
+                return jsonify({'error': f'Duplicate name(s) in file: {", ".join(duplicate_names)}'}), 400
+
+            for _, row in df.iterrows():
+                data = row.to_dict()
+                name = data['name'] if 'name' in data else None
+                if not name:
+                    continue
+                name = str(name).strip()
                 if not name:
                     continue
 
