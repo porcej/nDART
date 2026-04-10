@@ -23,7 +23,19 @@ services:
       # To use your existing production database, uncomment and modify:
       # - /path/to/your/production/database.db:/app/db/app.db:ro  # Read-only
       # - /path/to/your/production/database.db:/app/db/app.db      # Read-write
-    command: ["python", "app.py"]
+    command: [
+      "gunicorn",
+      "-k", "gevent",
+      "-w", "1",
+      "--worker-connections", "1000",
+      "--bind", "0.0.0.0:5000",
+      "--timeout", "120",
+      "--keep-alive", "5",
+      "--max-requests", "1000",
+      "--max-requests-jitter", "100",
+      "--preload",
+      "wsgi:app"
+    ]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
@@ -32,14 +44,14 @@ services:
       retries: 3
     restart: unless-stopped
     # Resource limits for production
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
+    #deploy:
+      #resources:
+       # limits:
+       #   memory: 1G
+       #   cpus: '1.0'
+       # reservations:
+       #   memory: 512M
+       #   cpus: '0.5'
 
 networks:
   default:
