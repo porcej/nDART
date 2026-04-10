@@ -2,6 +2,7 @@
 <html lang="en" data-bs-theme="dark" class="dark">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %} {% endblock %} | nDART</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -75,6 +76,7 @@
     <script src="{{ url_for('static', filename='js/bs-theme.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/moment/moment.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/jquery/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/csrf.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/DataTables/datatables.js') }}"></script>
     <script src="{{ url_for('static', filename='vend/selectize.js/0.15.2/js/selectize.min.js')}}"></script>
 

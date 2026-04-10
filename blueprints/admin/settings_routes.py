@@ -36,7 +36,8 @@ def get_enabled_status():
     """Get the enabled status of staffer API."""
     enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
     return jsonify({
-        'enabled': enabled
+        'success': True,
+        'enabled': enabled,
     })
 
 
@@ -74,11 +75,12 @@ def update_settings():
             )
         
         return jsonify({
-            'success': 'Settings updated successfully'
+            'success': 'Settings updated successfully.',
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update settings.'}), 400
 
 
 @admin_bp.route('/settings/test-connection', methods=['POST'])
@@ -101,8 +103,8 @@ def test_staffer_connection():
                 'error': result.get('error', 'Connection failed')
             }), 400
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Connection test failed due to an unexpected error.'}), 500
 
 
 @admin_bp.route('/settings/sync-assignments', methods=['POST'])
@@ -132,8 +134,8 @@ def sync_assignments():
                 'details': result
             }), 400
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Assignment sync failed due to an unexpected error.'}), 500
 
 
 @admin_bp.route('/settings/sync-statuses', methods=['POST'])
@@ -163,8 +165,8 @@ def sync_statuses():
                 'details': result
             }), 400
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Status sync failed due to an unexpected error.'}), 500
 
 
 @admin_bp.route('/settings/sync-aro-volunteers', methods=['POST'])
@@ -198,8 +200,8 @@ def sync_aro_volunteers():
                 'details': result
             }), 400
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'ARO volunteer import failed due to an unexpected error.'}), 500
 
 
 @admin_bp.route('/settings/import-statuses', methods=['POST'])
@@ -229,6 +231,6 @@ def import_statuses():
                 'details': result
             }), 400
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Status import failed due to an unexpected error.'}), 500
 

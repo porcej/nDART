@@ -29,8 +29,8 @@ from urllib.parse import urlsplit
 from werkzeug.utils import secure_filename
 
 
-from config import Config
-from extensions import db, migrate, login_manager, jwt, socketio
+from config import Config, get_config
+from extensions import db, migrate, login_manager, jwt, socketio, csrf
 from models import User
 
 
@@ -47,7 +47,7 @@ from blueprints.root import root_bp
 from blueprints.socketio_api import socketio_api_bp
 # from blueprints.public_api import public_api_bp
 
-def create_app(config_class=Config):
+def create_app(config_class=None):
     """Create and configure the Flask application using the factory pattern.
     
     Args:
@@ -56,16 +56,33 @@ def create_app(config_class=Config):
     Returns:
         Flask application instance
     """
+    # Select configuration class from environment when not explicitly provided
+    if config_class is None:
+        config_class = get_config()
+
     # Initialize the app
     app = Flask(__name__)
     app.config.from_object(config_class)
+    if hasattr(config_class, 'init_app'):
+        config_class.init_app(app)
+    app.config['WTF_CSRF_CHECK_DEFAULT'] = False
     
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
     socketio.init_app(app)
+
+    @app.before_request
+    def selective_csrf_protect():
+        if request.method in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+            return None
+        # Flask-SocketIO transport requests do not carry form/header CSRF tokens.
+        if request.path.startswith('/socket.io'):
+            return None
+        csrf.protect()
     
     # Register blueprints
     app.register_blueprint(root_bp)

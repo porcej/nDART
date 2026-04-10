@@ -28,9 +28,12 @@ def api_create_event():
             'data': [new_event.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500
     
 @event_bp.route('', methods=['GET'])
 @event_bp.route('/', methods=['GET'])
@@ -84,9 +87,12 @@ def api_update_event(event_id):
             'data': [event.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500
 
 
 @event_bp.route('/<event_id>', methods=['DELETE'])
@@ -107,6 +113,9 @@ def api_delete_event(event_id):
             'data': [event.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500

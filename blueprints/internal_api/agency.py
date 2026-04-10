@@ -28,9 +28,12 @@ def api_create_agency():
             'data': [new_agency.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500
     
 @agency_bp.route('', methods=['GET'])
 @agency_bp.route('/', methods=['GET'])
@@ -84,9 +87,12 @@ def api_update_agency(agency_id):
             'data': [agency.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500
 
 
 @agency_bp.route('/<agency_id>', methods=['DELETE'])
@@ -107,6 +113,9 @@ def api_delete_agency(agency_id):
             'data': [agency.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500

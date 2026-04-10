@@ -1,9 +1,13 @@
+from collections import Counter
+
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
+
 from extensions import db
 from models import Assignment
 from . import admin_bp
-from .utils import admin_required, export_to_xlsx, load_xlsx
+from .utils import admin_required, export_to_xlsx, load_xlsx, clean_str, clean_int, clean_bool
 
 # --------------------
 # Assignment Management
@@ -31,27 +35,37 @@ def get_assignment(id):
 @admin_required
 def create_assignment():
     """Create a new assignment."""
-    data = request.get_json()
-    assignment = Assignment(**data)
-
-    db.session.add(assignment)
-    db.session.commit()
-
-    return jsonify(assignment.to_dict()), 201
+    try:
+        data = request.get_json()
+        assignment = Assignment(**data)
+        db.session.add(assignment)
+        db.session.commit()
+        return jsonify({
+            'success': 'Assignment created successfully.',
+            'data': assignment.to_dict(),
+        }), 201
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create assignment.'}), 400
 
 @admin_bp.route('/assignments/<id>', methods=['PUT'])
 @login_required
 @admin_required
 def update_assignment(id):
     """Update an existing assignment."""
-    data = request.get_json()
-    assignment = Assignment.query.get_or_404(id)
-    for key, value in data.items():
-        setattr(assignment, key, value)
-
-    db.session.commit()
-
-    return jsonify(assignment.to_dict()), 200
+    try:
+        data = request.get_json()
+        assignment = Assignment.query.get_or_404(id)
+        for key, value in data.items():
+            setattr(assignment, key, value)
+        db.session.commit()
+        return jsonify({
+            'success': 'Assignment updated successfully.',
+            'data': assignment.to_dict(),
+        }), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update assignment.'}), 400
 
 @admin_bp.route('/assignments/<id>', methods=['DELETE'])
 @login_required
@@ -63,11 +77,11 @@ def delete_assignment(id):
         db.session.delete(assignment)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'Assignment deleted successfully'})
+        return jsonify({'success': 'Assignment deleted successfully.'})
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete assignment.'}), 400
 
 @admin_bp.route('/assignments/export')
 @login_required
@@ -86,34 +100,90 @@ def import_assignments():
     if file.filename.endswith('.xlsx'):
         try:
             df = load_xlsx(file)
-            # Get valid model fields
-            assignment_fields = ['name', 'description', 'sort_order', 'enabled']
-
-            # Filter DataFrame to only include valid model fields
+            assignment_fields = ['name', 'short_code', 'description', 'sort_order', 'enabled']
             valid_columns = [col for col in df.columns if col in assignment_fields]
-            
             df = df[valid_columns]
-            new_assignment_count = 0
-            
+
+            rows = []
             for _, row in df.iterrows():
                 data = row.to_dict()
-                name = data['name'] if 'name' in data else None
+                name = clean_str(data.get('name'))
                 if not name:
                     continue
+                short_code = clean_str(data.get('short_code'))
+                description = clean_str(data.get('description'))
+                rows.append({
+                    'name': name,
+                    'short_code': short_code,
+                    'description': description,
+                    'sort_order': clean_int(data.get('sort_order'), 0),
+                    'enabled': clean_bool(data.get('enabled'), True),
+                })
 
-                existing_assignment = Assignment.query.filter_by(name=name).first()
+            if not rows:
+                return jsonify({
+                    'error': 'No valid rows: each imported row needs a non-empty name.',
+                }), 400
 
-                if existing_assignment:
-                    continue
+            errors = []
+            names = [r['name'] for r in rows]
+            dup_names = sorted({n for n, c in Counter(names).items() if c > 1})
+            if dup_names:
+                errors.append(
+                    'Duplicate name(s) in file: ' + ', '.join(dup_names)
+                )
 
-                new_assignment = Assignment(name=name, description=data['description'], sort_order=data['sort_order'], enabled=data['enabled'] if 'enabled' in data else True)
+            codes = [r['short_code'] for r in rows if r['short_code']]
+            dup_codes = sorted({c for c, n in Counter(codes).items() if n > 1})
+            if dup_codes:
+                errors.append(
+                    'Duplicate short_code(s) in file: ' + ', '.join(dup_codes)
+                )
 
-                db.session.add(new_assignment)
+            db_name_hits = sorted({
+                r['name'] for r in rows
+                if Assignment.query.filter_by(name=r['name']).first()
+            })
+            if db_name_hits:
+                errors.append(
+                    'Name(s) already in database: ' + ', '.join(db_name_hits)
+                )
+
+            db_code_hits = sorted({
+                r['short_code'] for r in rows
+                if r['short_code']
+                and Assignment.query.filter_by(short_code=r['short_code']).first()
+            })
+            if db_code_hits:
+                errors.append(
+                    'Short code(s) already in database: ' + ', '.join(db_code_hits)
+                )
+
+            if errors:
+                return jsonify({'error': ' '.join(errors)}), 400
+
+            for r in rows:
+                db.session.add(Assignment(
+                    name=r['name'],
+                    short_code=r['short_code'],
+                    description=r['description'],
+                    sort_order=r['sort_order'],
+                    enabled=r['enabled'],
+                ))
+
+            try:
                 db.session.commit()
-                new_assignment_count += 1
+            except IntegrityError as e:
+                db.session.rollback()
+                return jsonify({
+                    'error': f'Database constraint violation: {e.orig or e}',
+                }), 400
 
-            return jsonify({'success': f'{new_assignment_count} assignments created successfully!'}), 200
+            return jsonify({
+                'success': f'{len(rows)} assignment(s) created successfully!',
+            }), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400

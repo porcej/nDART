@@ -104,7 +104,7 @@ def import_observations():
             flash(f'Missing required columns: {", ".join(missing_columns)}', 'error')
             return redirect(url_for('admin.observations'))
         
-        imported_count = 0
+        imported_observations = []
         errors = []
         
         for index, row in df.iterrows():
@@ -136,32 +136,34 @@ def import_observations():
                     notes=row.get('Notes', '') if pd.notna(row.get('Notes', '')) else None
                 )
                 
-                db.session.add(observation)
-                imported_count += 1
+                imported_observations.append(observation)
                 
             except Exception as e:
                 errors.append(f'Row {index + 1}: {str(e)}')
                 continue
         
-        db.session.commit()
-        
         if errors:
-            flash(f'Imported {imported_count} observations. Errors: {"; ".join(errors[:5])}', 'warning')
+            db.session.rollback()
+            flash(f'Import failed. No observations were created. Errors: {"; ".join(errors[:5])}', 'warning')
             socketio.emit('observations_imported', {
-                'count': imported_count,
+                'count': 0,
                 'errors': errors[:5],
                 'success': False
             }, namespace='/api')
         else:
-            flash(f'Successfully imported {imported_count} observations', 'success')
+            if imported_observations:
+                db.session.add_all(imported_observations)
+                db.session.commit()
+            flash(f'Successfully imported {len(imported_observations)} observations', 'success')
             socketio.emit('observations_imported', {
-                'count': imported_count,
+                'count': len(imported_observations),
                 'success': True
             }, namespace='/api')
         
         return redirect(url_for('admin.observations'))
         
     except Exception as e:
+        db.session.rollback()
         flash(f'Error importing observations: {str(e)}', 'error')
         return redirect(url_for('admin.observations'))
 
@@ -207,6 +209,7 @@ def delete_observation(id):
         observation = Observation.query.get_or_404(id)
         observation.delete_flag = True
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Observation deleted successfully'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'success': 'Observation deleted successfully.'})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to delete observation.'}), 400

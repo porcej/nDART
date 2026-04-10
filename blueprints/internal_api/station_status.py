@@ -28,9 +28,12 @@ def api_create_station_status():
             'data': [new_station_status.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500
     
 @station_status_bp.route('', methods=['GET'])
 @station_status_bp.route('/', methods=['GET'])
@@ -89,9 +92,12 @@ def api_update_station_status(station_status_id):
             'data': [station_status.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500
 
 
 @station_status_bp.route('/<station_status_id>', methods=['DELETE'])
@@ -112,6 +118,9 @@ def api_delete_station_status(station_status_id):
             'data': [station_status.to_dict()]
         })
 
-    except Exception as e:
+    except (TypeError, KeyError, ValueError):
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Invalid request payload.'}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Unexpected server error.'}), 500

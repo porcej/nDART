@@ -1,10 +1,11 @@
+from collections import Counter
+
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from extensions import db
 from models import ObservationsCategory
 from . import admin_bp
-from .utils import admin_required, export_to_xlsx, load_xlsx
-import pandas as pd
+from .utils import admin_required, export_to_xlsx, load_xlsx, clean_str, clean_int, clean_bool
 
 # -----------------
 # Observations Category Management
@@ -47,10 +48,13 @@ def create_observations_category():
         db.session.add(observations_category)
         db.session.commit()
 
-        return jsonify(observations_category.to_dict()), 201
+        return jsonify({
+            'success': 'Observation category created successfully.',
+            'data': observations_category.to_dict(),
+        }), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create observation category.'}), 400
 
 @admin_bp.route('/observations-categories/<id>', methods=['PUT'])
 @login_required
@@ -71,10 +75,13 @@ def update_observations_category(id):
             observations_category.sort_order = data['sort_order']
         db.session.commit()
 
-        return jsonify(observations_category.to_dict()) 
+        return jsonify({
+            'success': 'Observation category updated successfully.',
+            'data': observations_category.to_dict(),
+        })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update observation category.'}), 400
 
 @admin_bp.route('/observations-categories/<id>', methods=['DELETE'])
 @login_required
@@ -86,10 +93,10 @@ def delete_observations_category(id):
         db.session.delete(observations_category)
         db.session.commit()
 
-        return jsonify({'success': True, 'message': 'Observations category deleted successfully'})
+        return jsonify({'success': 'Observation category deleted successfully.'})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete observation category.'}), 400
 
 @admin_bp.route('/observations-categories/export')
 @login_required
@@ -115,11 +122,23 @@ def import_observations_categories():
             valid_columns = [col for col in df.columns if col in observations_category_fields]
             
             df = df[valid_columns]
-            new_observations_category_count = 0
+            new_observations_categories = []
+            normalized_names = []
             
             for _, row in df.iterrows():
                 data = row.to_dict()
-                name = data['name'] if 'name' in data else None
+                name = clean_str(data.get('name'))
+                if not name:
+                    continue
+                normalized_names.append(name)
+
+            duplicate_names = sorted([name for name, count in Counter(normalized_names).items() if count > 1])
+            if duplicate_names:
+                return jsonify({'error': f'Duplicate name(s) in file: {", ".join(duplicate_names)}'}), 400
+
+            for _, row in df.iterrows():
+                data = row.to_dict()
+                name = clean_str(data.get('name'))
                 if not name:
                     continue
 
@@ -130,17 +149,19 @@ def import_observations_categories():
 
                 new_observations_category = ObservationsCategory(
                     name=name, 
-                    sort_order=data['sort_order'] if 'sort_order' in data else 0, 
-                    enabled=data['enabled'] if 'enabled' in data else True,
-                    description=data['description'] if 'description' in data else None
+                    sort_order=clean_int(data.get('sort_order'), 0),
+                    enabled=clean_bool(data.get('enabled'), True),
+                    description=clean_str(data.get('description'))
                 )
+                new_observations_categories.append(new_observations_category)
 
-                db.session.add(new_observations_category)
+            if new_observations_categories:
+                db.session.add_all(new_observations_categories)
                 db.session.commit()
-                new_observations_category_count += 1
 
-            return jsonify({'success': f'{new_observations_category_count} observations categories created successfully!'}), 200
+            return jsonify({'success': f'{len(new_observations_categories)} observations categories created successfully!'}), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400
@@ -153,4 +174,4 @@ def remove_all_observations_categories():
     
     ObservationsCategory.query.delete()
     db.session.commit()
-    return 'All observations categories removed from database successfully!'
+    return jsonify({'success': 'All observations categories removed from database successfully!'}), 200

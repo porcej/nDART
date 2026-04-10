@@ -102,7 +102,7 @@ def import_status_reports():
             flash(f'Missing required columns: {", ".join(missing_columns)}', 'error')
             return redirect(url_for('admin.status_reports'))
         
-        imported_count = 0
+        imported_status_reports = []
         errors = []
         
         for index, row in df.iterrows():
@@ -132,32 +132,34 @@ def import_status_reports():
                     comment=row.get('Comment', '') if pd.notna(row.get('Comment', '')) else None
                 )
                 
-                db.session.add(status_report)
-                imported_count += 1
+                imported_status_reports.append(status_report)
                 
             except Exception as e:
                 errors.append(f'Row {index + 1}: {str(e)}')
                 continue
         
-        db.session.commit()
-        
         if errors:
-            flash(f'Imported {imported_count} status reports. Errors: {"; ".join(errors[:5])}', 'warning')
+            db.session.rollback()
+            flash(f'Import failed. No status reports were created. Errors: {"; ".join(errors[:5])}', 'warning')
             socketio.emit('status_reports_imported', {
-                'count': imported_count,
+                'count': 0,
                 'errors': errors[:5],
                 'success': False
             }, namespace='/api')
         else:
-            flash(f'Successfully imported {imported_count} status reports', 'success')
+            if imported_status_reports:
+                db.session.add_all(imported_status_reports)
+                db.session.commit()
+            flash(f'Successfully imported {len(imported_status_reports)} status reports', 'success')
             socketio.emit('status_reports_imported', {
-                'count': imported_count,
+                'count': len(imported_status_reports),
                 'success': True
             }, namespace='/api')
         
         return redirect(url_for('admin.status_reports'))
         
     except Exception as e:
+        db.session.rollback()
         flash(f'Error importing status reports: {str(e)}', 'error')
         return redirect(url_for('admin.status_reports'))
 
@@ -203,6 +205,7 @@ def delete_status_report(id):
         status_report = StatusReport.query.get_or_404(id)
         status_report.delete_flag = True
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Status report deleted successfully'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'success': 'Status report deleted successfully.'})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to delete status report.'}), 400

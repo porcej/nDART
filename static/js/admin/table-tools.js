@@ -43,7 +43,7 @@ export async function sendRequest({ url, method, data = null, errHandler = null,
             
             if (!res.ok) {
                 const error = await res.json();
-                throw new Error(error.message || 'Request failed');
+                throw new Error(error.error || error.message || 'Request failed');
             }
             
             return await res.json();
@@ -249,6 +249,10 @@ export function toolbar() {
                 });
                 
                 const data = await response.json();
+                if (!response.ok) {
+                    showToast('error', data.error || data.message || 'Import failed');
+                    return;
+                }
                 showToast('success', data.success);
                 setTimeout(() => location.reload(), 1000);
             } catch (error) {

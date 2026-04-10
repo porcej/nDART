@@ -13,3 +13,7 @@ pip install -r requirements.txt
 ```
 python app.py
 ```
+
+# Docs
+
+- `docs/TEST_CHECKLIST.md` - CSRF and admin workflow sanity checklist for regression testing

@@ -1,9 +1,11 @@
+from collections import Counter
+
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from extensions import db
 from models import User, Role
 from . import admin_bp
-from .utils import admin_required, export_to_xlsx, save_to_database, load_xlsx
+from .utils import admin_required, export_to_xlsx, save_to_database, load_xlsx, clean_str, clean_bool
 
 
 # ---------------
@@ -63,11 +65,14 @@ def create_user():
         db.session.add(user)
         db.session.commit()
         
-        return jsonify(user.to_dict()), 201
+        return jsonify({
+            'success': 'User created successfully.',
+            'data': user.to_dict(),
+        }), 201
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to create user.'}), 400
 
 @admin_bp.route('/users/<id>', methods=['PUT'])
 @login_required
@@ -109,11 +114,14 @@ def update_user(id):
                     user.add_role(role)
                     
         db.session.commit()
-        return jsonify(user.to_dict())
+        return jsonify({
+            'success': 'User updated successfully.',
+            'data': user.to_dict(),
+        })
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update user.'}), 400
 
 @admin_bp.route('/users/<id>', methods=['DELETE'])
 @login_required
@@ -129,11 +137,11 @@ def delete_user(id):
         db.session.delete(user)
         db.session.commit()
         
-        return jsonify({'success': True, 'message': 'User deleted successfully'})
+        return jsonify({'success': 'User deleted successfully.'})
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete user.'}), 400
     
 @admin_bp.route('/users/export')
 @login_required
@@ -161,11 +169,26 @@ def import_users():
             valid_columns = [col for col in df.columns if col in user_fields]
             
             df = df[valid_columns]
-            new_user_count = 0
-            
+            normalized_names = []
             for _, row in df.iterrows():
                 data = row.to_dict()
-                username = data['name'] if 'name' in data else None
+                name = clean_str(data.get('name'))
+                if not name:
+                    continue
+                normalized_names.append(name)
+
+            duplicate_names = sorted(
+                [n for n, c in Counter(normalized_names).items() if c > 1]
+            )
+            if duplicate_names:
+                return jsonify({
+                    'error': f'Duplicate username(s) in file: {", ".join(duplicate_names)}',
+                }), 400
+
+            new_users = []
+            for _, row in df.iterrows():
+                data = row.to_dict()
+                username = clean_str(data.get('name'))
                 if not username:
                     continue
 
@@ -174,17 +197,18 @@ def import_users():
                 if existing_user:
                     continue
 
-                password = data['password'] if 'password' in data and data['password'] not in [None, ''] else default_password
+                pwd_cell = clean_str(data.get('password'))
+                password = pwd_cell if pwd_cell else default_password
 
                 if password in [None, '']:
                     continue
 
-                person = data['person'] if 'person' in data else None
-                active = data['active'] if 'active' in data else False
+                person = clean_str(data.get('person'))
+                active = clean_bool(data.get('active'), False)
                 new_user = User(name=username, person=person, active=active)
 
                 for role_field in roles_fields:
-                    if role_field in data and data[role_field]:
+                    if role_field in data and clean_bool(data.get(role_field), False):
                         role = Role.query.filter_by(name=role_field.replace('is_', '')).first()
                         if role:
                             new_user.add_role(role)
@@ -192,12 +216,15 @@ def import_users():
                 if password:
                     new_user.set_password(password)
 
-                db.session.add(new_user)
-                db.session.commit()
-                new_user_count += 1
+                new_users.append(new_user)
 
-            return jsonify({'success': f'{new_user_count} users created successfully!'}), 200
+            if new_users:
+                db.session.add_all(new_users)
+                db.session.commit()
+
+            return jsonify({'success': f'{len(new_users)} users created successfully!'}), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400
@@ -234,4 +261,4 @@ def get_user_roles():
             'roles': [{'role_id': role.id, 'role_name': role.name} for role in user.roles]
         })
         
-    return jsonify(user_roles)
+    return jsonify({'success': 'User roles fetched successfully.', 'data': user_roles})

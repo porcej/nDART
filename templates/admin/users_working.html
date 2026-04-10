@@ -111,6 +111,7 @@
             </div>
             
             <form id="userForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <input type="hidden" id="userId" data-field="id">
                     
@@ -167,6 +168,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="importForm" method="POST" action="{{ url_for('admin.import_users') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="importFile" class="form-label">Excel File</label>

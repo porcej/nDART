@@ -58,12 +58,13 @@ def create_staffer_mapping():
         )
         
         return jsonify({
-            'success': 'Mapping created successfully',
-            'mapping': mapping.to_dict()
+            'success': 'Mapping created successfully.',
+            'data': mapping.to_dict(),
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create mapping.'}), 400
 
 
 @admin_bp.route('/staffer-mappings/<mapping_id>', methods=['PUT'])
@@ -95,13 +96,13 @@ def update_staffer_mapping(mapping_id):
         db.session.commit()
         
         return jsonify({
-            'success': 'Mapping updated successfully',
-            'mapping': mapping.to_dict()
+            'success': 'Mapping updated successfully.',
+            'data': mapping.to_dict(),
         })
     
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to update mapping.'}), 400
 
 
 @admin_bp.route('/staffer-mappings/<mapping_id>', methods=['DELETE'])
@@ -117,11 +118,9 @@ def delete_staffer_mapping(mapping_id):
         db.session.delete(mapping)
         db.session.commit()
         
-        return jsonify({
-            'success': 'Mapping deleted successfully'
-        })
+        return jsonify({'success': 'Mapping deleted successfully.'})
     
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'error': 'Failed to delete mapping.'}), 400
 

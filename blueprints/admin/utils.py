@@ -18,7 +18,7 @@ def admin_required(f):
             
         if not current_user.has_role('admin'):
             flash('You need admin privileges to access this page.', 'error')
-            return redirect(url_for('main.dashboard'))
+            return redirect(url_for('main_bp.dashboard'))
             
         return f(*args, **kwargs)
     return decorated_function
@@ -28,6 +28,37 @@ def load_xlsx(file):
     df = pd.read_excel(file)
     df.columns = df.columns.str.lower().str.replace(' ', '_')
     return df
+
+
+def clean_str(val):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return None
+    s = str(val).strip()
+    return s if s else None
+
+
+def clean_int(val, default=0):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    try:
+        return int(float(val))
+    except (TypeError, ValueError):
+        return default
+
+
+def clean_bool(val, default=True):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)) and not isinstance(val, bool):
+        return bool(int(val))
+    s = str(val).strip().lower()
+    if s in ('true', '1', 'yes', 'y'):
+        return True
+    if s in ('false', '0', 'no', 'n'):
+        return False
+    return default
 
 # Save Dict to XLSX file
 def save_xlsx(df, file):
@@ -125,6 +156,15 @@ def save_to_database(df, table, password=None):
         db.session.rollback()
         raise
 
+def _max_excel_column_width(series, header_len):
+    """Widest cell as character count; avoids apply(len) on raw NaN/float (pandas TypeError)."""
+    if series.empty:
+        return header_len + 1
+    content_max = series.map(lambda v: len(str(v))).max()
+    if pd.isna(content_max):
+        content_max = 0
+    return max(int(content_max), header_len) + 1
+
 def export_to_xlsx(table):
     # Get the appropriate model class based on the table name
     model_map = {
@@ -146,8 +186,10 @@ def export_to_xlsx(table):
     # Query all records and convert to dictionaries
     records = [record.to_dict() for record in model_class.query.all()]
     
-    # Convert to DataFrame
+    # Convert to DataFrame (omit primary key so imports always get new ids)
     df = pd.DataFrame(records)
+    if 'id' in df.columns:
+        df = df.drop(columns=['id'])
     
     # Create Excel file in memory
     output = BytesIO()
@@ -158,10 +200,7 @@ def export_to_xlsx(table):
         worksheet = writer.sheets[table]
         for idx, col in enumerate(df.columns):
             series = df[col]
-            max_len = max(
-                series.astype(str).apply(len).max(),  # len of largest item
-                len(str(series.name))  # len of column name/header
-            ) + 1  # adding a little extra space
+            max_len = _max_excel_column_width(series, len(str(col)))
             worksheet.set_column(idx, idx, max_len)  # set column width
     
     output.seek(0)
