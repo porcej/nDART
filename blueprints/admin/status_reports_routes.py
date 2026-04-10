@@ -205,6 +205,7 @@ def delete_status_report(id):
         status_report = StatusReport.query.get_or_404(id)
         status_report.delete_flag = True
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Status report deleted successfully'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'success': 'Status report deleted successfully.'})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to delete status report.'}), 400

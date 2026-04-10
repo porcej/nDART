@@ -228,6 +228,7 @@ def delete_event(id):
         event = Event.query.get_or_404(id)
         event.delete_flag = True
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Event deleted successfully'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        return jsonify({'success': 'Event deleted successfully.'})
+    except Exception:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to delete event.'}), 400

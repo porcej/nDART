@@ -20,8 +20,8 @@ def api_get_volunteers_by_assignment(assignment_id):
             'count': len(volunteers)
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Failed to fetch volunteers for assignment.'}), 500
 
 
 @staffer_volunteers_bp.route('', methods=['GET'])
@@ -47,8 +47,8 @@ def api_get_all_volunteers():
             'count': len(volunteers)
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    except Exception:
+        return jsonify({'error': 'Failed to fetch volunteers.'}), 500
 
 
 
@@ -95,8 +95,8 @@ def api_checkin_volunteer():
                 'warning': f'Staffer update failed: {result["error"]}'
             }), 200  # Still return 200 since local update succeeded
     
-    except Exception as e:
+    except Exception:
         return jsonify({
-            'error': str(e),
-            'warning': 'Status report saved but volunteer status update failed'
+            'error': 'Volunteer status update failed due to an unexpected error.',
+            'warning': 'Status report saved but volunteer status update failed.'
         }), 500
