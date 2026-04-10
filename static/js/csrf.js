@@ -35,20 +35,34 @@
         return nativeFetch(input, { ...init, headers });
     };
 
-    // Wrap XHR so libraries that bypass fetch/jQuery (e.g. some DataTables paths)
-    // still get CSRF headers on mutating requests.
+    // Wrap XHR so libraries that bypass fetch (e.g. jQuery/DataTables) still get CSRF
+    // on mutating requests. Track outgoing X-CSRFToken via setRequestHeader so we never
+    // append a second value (duplicate headers become "token, token" and break Flask-WTF).
     const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
     const originalSend = XMLHttpRequest.prototype.send;
 
     XMLHttpRequest.prototype.open = function (method, url, ...rest) {
         this.__csrfMethod = method;
         this.__csrfUrl = url;
+        this.__csrfTokenHeaderPresent = false;
         return originalOpen.call(this, method, url, ...rest);
+    };
+
+    XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+        if (String(name).toLowerCase() === 'x-csrftoken') {
+            this.__csrfTokenHeaderPresent = true;
+        }
+        return originalSetRequestHeader.call(this, name, value);
     };
 
     XMLHttpRequest.prototype.send = function (body) {
         const token = getCsrfToken();
-        if (token && shouldAttach(this.__csrfMethod)) {
+        if (
+            token &&
+            shouldAttach(this.__csrfMethod) &&
+            !this.__csrfTokenHeaderPresent
+        ) {
             try {
                 this.setRequestHeader('X-CSRFToken', token);
             } catch (e) {
@@ -58,17 +72,8 @@
         return originalSend.call(this, body);
     };
 
-    // jQuery/DataTables editor requests.
-    if (window.jQuery) {
-        window.jQuery.ajaxSetup({
-            beforeSend: function (xhr, settings) {
-                const token = getCsrfToken();
-                if (shouldAttach(settings && settings.type)) {
-                    xhr.setRequestHeader('X-CSRFToken', token);
-                }
-            },
-        });
-    }
+    // jQuery uses XMLHttpRequest; the send() wrapper above supplies the token. Do not
+    // also use ajaxSetup(beforeSend), or the header would be set twice and validation fails.
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', addHiddenTokenToForms);
