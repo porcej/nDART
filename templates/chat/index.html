@@ -142,6 +142,7 @@
     <div id="chat-box" class="scrollbar-custom" aria-live="polite"></div>
 
     <form id="message-form" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" 
                id="message" 
                placeholder="Type your message..." 

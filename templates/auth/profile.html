@@ -28,6 +28,7 @@
         <div class="profile-section">
             <h3 class="section-title">Change Password</h3>
             <form method="POST" action="{{ url_for('auth.change_password') }}" class="password-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="form-group">
                     <label for="current_password">Current Password</label>
                     <input type="password" id="current_password" name="current_password" class="form-control" required>

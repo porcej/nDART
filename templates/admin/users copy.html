@@ -105,6 +105,7 @@
             </div>
             
             <form id="userForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
                     <input type="hidden" id="userUuid">
                     
