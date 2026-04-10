@@ -1,5 +1,10 @@
+from collections import Counter
+
+import pandas as pd
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy.exc import IntegrityError
+
 from extensions import db
 from models import Assignment
 from . import admin_bp
@@ -76,6 +81,37 @@ def export_assignments():
     """Export assignments to Excel."""
     return export_to_xlsx('assignments')
 
+def _assignment_clean_str(val):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return None
+    s = str(val).strip()
+    return s if s else None
+
+
+def _assignment_clean_int(val, default=0):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    try:
+        return int(float(val))
+    except (TypeError, ValueError):
+        return default
+
+
+def _assignment_clean_bool(val, default=True):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)) and not isinstance(val, bool):
+        return bool(int(val))
+    s = str(val).strip().lower()
+    if s in ('true', '1', 'yes', 'y'):
+        return True
+    if s in ('false', '0', 'no', 'n'):
+        return False
+    return default
+
+
 @admin_bp.route('/assignments/import', methods=['POST'])
 @login_required
 @admin_required
@@ -86,34 +122,94 @@ def import_assignments():
     if file.filename.endswith('.xlsx'):
         try:
             df = load_xlsx(file)
-            # Get valid model fields
-            assignment_fields = ['name', 'description', 'sort_order', 'enabled']
-
-            # Filter DataFrame to only include valid model fields
+            assignment_fields = ['name', 'short_code', 'description', 'sort_order', 'enabled']
             valid_columns = [col for col in df.columns if col in assignment_fields]
-            
             df = df[valid_columns]
-            new_assignment_count = 0
-            
+
+            rows = []
             for _, row in df.iterrows():
                 data = row.to_dict()
-                name = data['name'] if 'name' in data else None
+                name = _assignment_clean_str(data.get('name'))
                 if not name:
                     continue
+                short_code = _assignment_clean_str(data.get('short_code'))
+                description = data.get('description')
+                if description is not None and isinstance(description, float) and pd.isna(description):
+                    description = None
+                elif description is not None:
+                    description = str(description).strip() or None
+                rows.append({
+                    'name': name,
+                    'short_code': short_code,
+                    'description': description,
+                    'sort_order': _assignment_clean_int(data.get('sort_order'), 0),
+                    'enabled': _assignment_clean_bool(data.get('enabled'), True),
+                })
 
-                existing_assignment = Assignment.query.filter_by(name=name).first()
+            if not rows:
+                return jsonify({
+                    'error': 'No valid rows: each imported row needs a non-empty name.',
+                }), 400
 
-                if existing_assignment:
-                    continue
+            errors = []
+            names = [r['name'] for r in rows]
+            dup_names = sorted({n for n, c in Counter(names).items() if c > 1})
+            if dup_names:
+                errors.append(
+                    'Duplicate name(s) in file: ' + ', '.join(dup_names)
+                )
 
-                new_assignment = Assignment(name=name, description=data['description'], sort_order=data['sort_order'], enabled=data['enabled'] if 'enabled' in data else True)
+            codes = [r['short_code'] for r in rows if r['short_code']]
+            dup_codes = sorted({c for c, n in Counter(codes).items() if n > 1})
+            if dup_codes:
+                errors.append(
+                    'Duplicate short_code(s) in file: ' + ', '.join(dup_codes)
+                )
 
-                db.session.add(new_assignment)
+            db_name_hits = sorted({
+                r['name'] for r in rows
+                if Assignment.query.filter_by(name=r['name']).first()
+            })
+            if db_name_hits:
+                errors.append(
+                    'Name(s) already in database: ' + ', '.join(db_name_hits)
+                )
+
+            db_code_hits = sorted({
+                r['short_code'] for r in rows
+                if r['short_code']
+                and Assignment.query.filter_by(short_code=r['short_code']).first()
+            })
+            if db_code_hits:
+                errors.append(
+                    'Short code(s) already in database: ' + ', '.join(db_code_hits)
+                )
+
+            if errors:
+                return jsonify({'error': ' '.join(errors)}), 400
+
+            for r in rows:
+                db.session.add(Assignment(
+                    name=r['name'],
+                    short_code=r['short_code'],
+                    description=r['description'],
+                    sort_order=r['sort_order'],
+                    enabled=r['enabled'],
+                ))
+
+            try:
                 db.session.commit()
-                new_assignment_count += 1
+            except IntegrityError as e:
+                db.session.rollback()
+                return jsonify({
+                    'error': f'Database constraint violation: {e.orig or e}',
+                }), 400
 
-            return jsonify({'success': f'{new_assignment_count} assignments created successfully!'}), 200
+            return jsonify({
+                'success': f'{len(rows)} assignment(s) created successfully!',
+            }), 200
         except Exception as e:
+            db.session.rollback()
             return jsonify({'error': f'Error loading file: {str(e)}'}), 400
     else:
         return jsonify({'error': 'Only xlsx files are allowed!'}), 400

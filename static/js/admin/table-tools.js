@@ -249,6 +249,10 @@ export function toolbar() {
                 });
                 
                 const data = await response.json();
+                if (!response.ok) {
+                    showToast('error', data.error || data.message || 'Import failed');
+                    return;
+                }
                 showToast('success', data.success);
                 setTimeout(() => location.reload(), 1000);
             } catch (error) {
