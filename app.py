@@ -29,7 +29,7 @@ from urllib.parse import urlsplit
 from werkzeug.utils import secure_filename
 
 
-from config import Config
+from config import Config, get_config
 from extensions import db, migrate, login_manager, jwt, socketio
 from models import User
 
@@ -47,7 +47,7 @@ from blueprints.root import root_bp
 from blueprints.socketio_api import socketio_api_bp
 # from blueprints.public_api import public_api_bp
 
-def create_app(config_class=Config):
+def create_app(config_class=None):
     """Create and configure the Flask application using the factory pattern.
     
     Args:
@@ -56,9 +56,15 @@ def create_app(config_class=Config):
     Returns:
         Flask application instance
     """
+    # Select configuration class from environment when not explicitly provided
+    if config_class is None:
+        config_class = get_config()
+
     # Initialize the app
     app = Flask(__name__)
     app.config.from_object(config_class)
+    if hasattr(config_class, 'init_app'):
+        config_class.init_app(app)
     
     # Initialize extensions
     db.init_app(app)

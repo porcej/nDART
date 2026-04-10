@@ -22,6 +22,7 @@ eventlet.monkey_patch()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app, init_app
+from extensions import socketio
 
 # Create the Flask application
 app = create_app()

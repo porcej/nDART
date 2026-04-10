@@ -37,7 +37,7 @@ def check_database():
         # Test a simple query to ensure tables are accessible
         # Try to query a table that should exist, fallback to a basic test
         try:
-            result = db.session.execute(text('SELECT COUNT(*) FROM user LIMIT 1'))
+            result = db.session.execute(text('SELECT COUNT(*) FROM users LIMIT 1'))
             user_count = result.scalar()
         except Exception:
             # If user table doesn't exist, try a different approach
