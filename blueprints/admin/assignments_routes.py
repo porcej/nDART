@@ -1,6 +1,5 @@
 from collections import Counter
 
-import pandas as pd
 from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
@@ -8,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from extensions import db
 from models import Assignment
 from . import admin_bp
-from .utils import admin_required, export_to_xlsx, load_xlsx
+from .utils import admin_required, export_to_xlsx, load_xlsx, clean_str, clean_int, clean_bool
 
 # --------------------
 # Assignment Management
@@ -91,37 +90,6 @@ def export_assignments():
     """Export assignments to Excel."""
     return export_to_xlsx('assignments')
 
-def _assignment_clean_str(val):
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return None
-    s = str(val).strip()
-    return s if s else None
-
-
-def _assignment_clean_int(val, default=0):
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return default
-    try:
-        return int(float(val))
-    except (TypeError, ValueError):
-        return default
-
-
-def _assignment_clean_bool(val, default=True):
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return default
-    if isinstance(val, bool):
-        return val
-    if isinstance(val, (int, float)) and not isinstance(val, bool):
-        return bool(int(val))
-    s = str(val).strip().lower()
-    if s in ('true', '1', 'yes', 'y'):
-        return True
-    if s in ('false', '0', 'no', 'n'):
-        return False
-    return default
-
-
 @admin_bp.route('/assignments/import', methods=['POST'])
 @login_required
 @admin_required
@@ -139,21 +107,17 @@ def import_assignments():
             rows = []
             for _, row in df.iterrows():
                 data = row.to_dict()
-                name = _assignment_clean_str(data.get('name'))
+                name = clean_str(data.get('name'))
                 if not name:
                     continue
-                short_code = _assignment_clean_str(data.get('short_code'))
-                description = data.get('description')
-                if description is not None and isinstance(description, float) and pd.isna(description):
-                    description = None
-                elif description is not None:
-                    description = str(description).strip() or None
+                short_code = clean_str(data.get('short_code'))
+                description = clean_str(data.get('description'))
                 rows.append({
                     'name': name,
                     'short_code': short_code,
                     'description': description,
-                    'sort_order': _assignment_clean_int(data.get('sort_order'), 0),
-                    'enabled': _assignment_clean_bool(data.get('enabled'), True),
+                    'sort_order': clean_int(data.get('sort_order'), 0),
+                    'enabled': clean_bool(data.get('enabled'), True),
                 })
 
             if not rows:

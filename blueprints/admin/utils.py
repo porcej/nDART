@@ -29,6 +29,37 @@ def load_xlsx(file):
     df.columns = df.columns.str.lower().str.replace(' ', '_')
     return df
 
+
+def clean_str(val):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return None
+    s = str(val).strip()
+    return s if s else None
+
+
+def clean_int(val, default=0):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    try:
+        return int(float(val))
+    except (TypeError, ValueError):
+        return default
+
+
+def clean_bool(val, default=True):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)) and not isinstance(val, bool):
+        return bool(int(val))
+    s = str(val).strip().lower()
+    if s in ('true', '1', 'yes', 'y'):
+        return True
+    if s in ('false', '0', 'no', 'n'):
+        return False
+    return default
+
 # Save Dict to XLSX file
 def save_xlsx(df, file):
     df.to_excel(file, index=False)

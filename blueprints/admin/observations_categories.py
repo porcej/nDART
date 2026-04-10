@@ -5,39 +5,7 @@ from flask_login import login_required, current_user
 from extensions import db
 from models import ObservationsCategory
 from . import admin_bp
-from .utils import admin_required, export_to_xlsx, load_xlsx
-import pandas as pd
-
-
-def _clean_str(val):
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return None
-    s = str(val).strip()
-    return s if s else None
-
-
-def _clean_int(val, default=0):
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return default
-    try:
-        return int(float(val))
-    except (TypeError, ValueError):
-        return default
-
-
-def _clean_bool(val, default=True):
-    if val is None or (isinstance(val, float) and pd.isna(val)):
-        return default
-    if isinstance(val, bool):
-        return val
-    if isinstance(val, (int, float)) and not isinstance(val, bool):
-        return bool(int(val))
-    s = str(val).strip().lower()
-    if s in ('true', '1', 'yes', 'y'):
-        return True
-    if s in ('false', '0', 'no', 'n'):
-        return False
-    return default
+from .utils import admin_required, export_to_xlsx, load_xlsx, clean_str, clean_int, clean_bool
 
 # -----------------
 # Observations Category Management
@@ -159,7 +127,7 @@ def import_observations_categories():
             
             for _, row in df.iterrows():
                 data = row.to_dict()
-                name = _clean_str(data.get('name'))
+                name = clean_str(data.get('name'))
                 if not name:
                     continue
                 normalized_names.append(name)
@@ -170,7 +138,7 @@ def import_observations_categories():
 
             for _, row in df.iterrows():
                 data = row.to_dict()
-                name = _clean_str(data.get('name'))
+                name = clean_str(data.get('name'))
                 if not name:
                     continue
 
@@ -181,9 +149,9 @@ def import_observations_categories():
 
                 new_observations_category = ObservationsCategory(
                     name=name, 
-                    sort_order=_clean_int(data.get('sort_order'), 0),
-                    enabled=_clean_bool(data.get('enabled'), True),
-                    description=_clean_str(data.get('description'))
+                    sort_order=clean_int(data.get('sort_order'), 0),
+                    enabled=clean_bool(data.get('enabled'), True),
+                    description=clean_str(data.get('description'))
                 )
                 new_observations_categories.append(new_observations_category)
 
