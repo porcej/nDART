@@ -2,19 +2,19 @@
 # -*- coding: utf-8 -*-
 
 """
-WSGI Application Entry Point for nDART
+WSGI Application Entry Point for nDART (eventlet)
 
-This module provides the WSGI application entry point for production deployment
-with Gunicorn + gevent for Flask-SocketIO support.
+Use with Gunicorn + eventlet:
+    gunicorn -k eventlet -w 1 --bind 0.0.0.0:5000 wsgi:application
 
-Usage:
-    gunicorn -k gevent -w 1 --bind 0.0.0.0:5000 wsgi:application
+For gevent workers, use wsgi_gevent.py instead. Mixing eventlet.monkey_patch()
+with a gevent worker hangs Socket.IO and times out the worker.
 """
 
 import os
 import sys
 
-# Monkey patch for eventlet compatibility - MUST be done before any other imports
+# Monkey patch for eventlet - MUST be done before any other imports
 import eventlet
 eventlet.monkey_patch()
 

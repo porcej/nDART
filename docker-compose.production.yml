@@ -5,7 +5,7 @@ services:
     ports:
       - "9030:5000"
     environment:
-      - FLASK_APP=wsgi.py
+      - FLASK_APP=wsgi_gevent.py
       - FLASK_ENV=production
       - FLASK_RUN_HOST=0.0.0.0
       - FLASK_RUN_PORT=5000
@@ -16,6 +16,7 @@ services:
       - FLASK_PORT=5000
       - LOGGING_PATH=/app/log
       - LOGGING_LEVEL=20
+      - ASYNC_MODE=gevent
     volumes:
       # Persist database and logs on host filesystem
       - ./db:/app/db
@@ -34,7 +35,7 @@ services:
       "--max-requests", "1000",
       "--max-requests-jitter", "100",
       "--preload",
-      "wsgi:app"
+      "wsgi_gevent:application"
     ]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]

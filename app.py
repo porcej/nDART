@@ -73,7 +73,7 @@ def create_app(config_class=None):
     jwt.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
-    socketio.init_app(app)
+    socketio.init_app(app, async_mode=app.config.get('ASYNC_MODE'), cors_allowed_origins='*')
 
     @app.before_request
     def selective_csrf_protect():
