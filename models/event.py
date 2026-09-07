@@ -19,10 +19,12 @@ class Event(db.Model):
     notes = db.Column(db.Text, nullable=True)
     gender = db.Column(db.String(10), nullable=True)
     delete_flag = db.Column(db.Boolean, default=False)
+    race_id = db.Column(db.String(36), db.ForeignKey('races.id'), nullable=False, index=True)
     
     # Add these relationships after the columns
     reporter = db.relationship('Assignment', foreign_keys=[reporter_id], back_populates='events')
     agency = db.relationship('Agency', foreign_keys=[agency_id], back_populates='events')
+    race = db.relationship('Race', foreign_keys=[race_id], back_populates='events')
     
     def __repr__(self):
         return f"<Event {self.id}>"
@@ -41,5 +43,6 @@ class Event(db.Model):
             'resolved': self.resolved.strftime("%H:%M") if self.resolved else None,
             'notes': self.notes,
             'gender': self.gender,
-            'delete_flag': self.delete_flag
+            'delete_flag': self.delete_flag,
+            'race_id': self.race_id,
         }

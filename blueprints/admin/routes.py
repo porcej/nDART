@@ -1,21 +1,22 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, Role, ChatRoom, Agency, StationStatus, Assignment, ObservationsCategory, Event, Observation, StatusReport, AppSettings
+from models import User, Role, ChatRoom, Agency, StationStatus, Assignment, ObservationsCategory, Event, Observation, StatusReport, AppSettings, Race
 from datetime import datetime, UTC
 from uuid import uuid4
 from . import admin_bp
 from .utils import admin_required
+from blueprints.race_context import apply_race_filter
 import pandas as pd
 from io import BytesIO
 
 
 def remove_all_rows(table_name):
-    """Helper function to remove all rows from a table."""
+    """Helper function to remove all rows from a table for the current race."""
     if table_name == 'events':
-        Event.query.delete()
+        apply_race_filter(Event.query, Event).delete(synchronize_session=False)
     elif table_name == 'observations':
-        Observation.query.delete()
+        apply_race_filter(Observation.query, Observation).delete(synchronize_session=False)
     db.session.commit()
 
 
@@ -32,12 +33,13 @@ def index():
     observations_categories_count = ObservationsCategory.query.count()
     station_statuses_count = StationStatus.query.count()
     active_statuses = StationStatus.query.filter_by(enabled=True).count()
-    chat_rooms_count = ChatRoom.query.count()
+    chat_rooms_count = apply_race_filter(ChatRoom.query, ChatRoom).count()
     agencies_count = Agency.query.count()
     active_agencies = Agency.query.filter_by(enabled=True).count()
-    events_count = Event.query.count()
-    observations_count = Observation.query.count()
-    status_reports_count = StatusReport.query.count()
+    events_count = apply_race_filter(Event.query, Event).count()
+    observations_count = apply_race_filter(Observation.query, Observation).count()
+    status_reports_count = apply_race_filter(StatusReport.query, StatusReport).count()
+    races_count = Race.query.count()
     
     return render_template('admin/index.html',
                          username=current_user.name,
@@ -54,7 +56,9 @@ def index():
                          active_agencies=active_agencies,
                          events_count=events_count,
                          observations_count=observations_count,
-                         status_reports_count=status_reports_count)
+                         status_reports_count=status_reports_count,
+                         races_count=races_count,
+                         active_users=User.query.filter_by(active=True).count())
 
 
 # Legacy admin route (moved from app.py)

@@ -14,10 +14,12 @@ class Observation(db.Model):
     category_id = db.Column(db.String(36), db.ForeignKey('observations_categories.id'), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     delete_flag = db.Column(db.Boolean, default=False)
+    race_id = db.Column(db.String(36), db.ForeignKey('races.id'), nullable=False, index=True)
 
     # Add these relationships after the columns
     category = db.relationship('ObservationsCategory', foreign_keys=[category_id], back_populates='observations')
     reporter = db.relationship('Assignment', foreign_keys=[reporter_id], back_populates='observations')
+    race = db.relationship('Race', foreign_keys=[race_id], back_populates='observations')
 
     def __repr__(self):
         return f"<Observation {self.id}>"
@@ -29,4 +31,5 @@ class Observation(db.Model):
             'bib': self.bib,
             'reporter_id': self.reporter_id,
             'category_id': self.category_id,
+            'race_id': self.race_id,
         }

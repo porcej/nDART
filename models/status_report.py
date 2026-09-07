@@ -12,10 +12,12 @@ class StatusReport(db.Model):
     status_id = db.Column(db.String(36), db.ForeignKey('station_statuses.id'), nullable=True)
     comment = db.Column(db.Text, nullable=True)
     delete_flag = db.Column(db.Boolean, default=False)
+    race_id = db.Column(db.String(36), db.ForeignKey('races.id'), nullable=False, index=True)
     
     # Add these relationships after the columns
     reporter = db.relationship('Assignment', foreign_keys=[reporter_id], back_populates='status_reports')
     status = db.relationship('StationStatus', foreign_keys=[status_id], back_populates='status_reports')
+    race = db.relationship('Race', foreign_keys=[race_id], back_populates='status_reports')
     
     def __repr__(self):
         return f"<StatusReport {self.id}>"
@@ -27,5 +29,6 @@ class StatusReport(db.Model):
             'reporter_id': self.reporter_id,
             'status_id': self.status_id,
             'comment': self.comment,
-            'delete_flag': self.delete_flag
+            'delete_flag': self.delete_flag,
+            'race_id': self.race_id,
         }

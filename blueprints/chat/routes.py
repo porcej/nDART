@@ -24,8 +24,14 @@ def allowed_file(filename):
 def chat():
     """Chat room. The user's name and room must be stored in
     the session."""
+    from blueprints.race_context import apply_race_filter
 
-    chat_rooms = [room.to_dict() for room in ChatRoom.query.filter(ChatRoom.enabled == True).all()]
+    chat_rooms = [
+        room.to_dict()
+        for room in apply_race_filter(
+            ChatRoom.query.filter(ChatRoom.enabled == True), ChatRoom
+        ).all()
+    ]
     return render_template('chat/index.html', chat_rooms=chat_rooms)
 
 # Socket.IO event handlers
@@ -40,16 +46,25 @@ def handle_join(data):
 @socketio.on('send_message', namespace='/chat')
 @login_required
 def handle_send_message(data):
+    from blueprints.race_context import require_writable_race_for_row
+
     logger.info(f"Received send_message: {data}")
     room_id = data['room_id']
-    # nick_name = data['nick_name']
+    room = ChatRoom.query.get(room_id)
+    if room is None:
+        emit('error', {'msg': 'Chat room not found.'})
+        return
+    _race, err = require_writable_race_for_row(room)
+    if err is not None:
+        emit('error', {'msg': 'This race is archived and read-only.'})
+        return
+
     sender = current_user.name
     content = data['message']
     created_at = datetime.now(UTC)
 
     message = ChatMessage(
         room_id=room_id,
-        # nick_name=nick_name,
         sender=sender,
         content=content,
         created_at=created_at

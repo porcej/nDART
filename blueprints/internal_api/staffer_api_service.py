@@ -7,6 +7,7 @@ for status report updates.
 
 import requests
 from models import AppSettings, Assignment, StationStatus, StafferAROVolunteer, StafferAssignmentMapping
+from blueprints.race_context import get_current_race_id
 from extensions import db
 from datetime import datetime
 
@@ -569,11 +570,22 @@ def sync_station_statuses_to_staffer():
 
 def sync_aro_volunteers_from_staffer():
     """
-    Fetch ARO volunteer data from the staffer database and populate the staffer_aro_volunteers table
-    
+    Fetch ARO volunteer data from the staffer database and populate the
+    staffer_aro_volunteers table for the current race.
+
     Returns:
         Dictionary with success status and sync results
     """
+    from blueprints.race_context import require_writable_race
+
+    race, err = require_writable_race()
+    if err is not None:
+        return {
+            'success': False,
+            'error': 'Current race is archived or missing; cannot sync volunteers.'
+        }
+
+    race_id = race.id
     try:
         config = get_staffer_api_config()
         headers = get_api_headers(config['api_key'])
@@ -668,6 +680,7 @@ def sync_aro_volunteers_from_staffer():
                 # This works even if assignment_id is None
                 StafferAROVolunteer.update_or_create_by_callsign(
                     callsign=callsign,
+                    race_id=race_id,
                     assignment_id=assignment_id,
                     staffer_assignment=assignment_name,  # Store the original assignment from staffer
                     short_code=assignment_short_code,

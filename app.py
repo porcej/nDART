@@ -110,7 +110,22 @@ def create_app(config_class=None):
             
     @app.context_processor
     def utility_processor():
-        return {'now': datetime.now()}
+        from blueprints.race_context import get_current_race, list_races
+        current_race = None
+        races = []
+        try:
+            if current_user.is_authenticated:
+                current_race = get_current_race()
+                races = list_races()
+        except Exception:
+            # Tables may not exist yet during migrations
+            current_race = None
+            races = []
+        return {
+            'now': datetime.now(),
+            'current_race': current_race,
+            'races': races,
+        }
     
     return app
 

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required
 from models import StafferAROVolunteer, Assignment, AppSettings
 from .staffer_api_service import checkin_volunteer_to_staffer
+from blueprints.race_context import apply_race_filter, require_writable_race
 
 staffer_volunteers_bp = Blueprint('staffer_volunteers_bp', __name__, url_prefix='/staffer-volunteers')
 
@@ -9,10 +10,13 @@ staffer_volunteers_bp = Blueprint('staffer_volunteers_bp', __name__, url_prefix=
 @login_required
 def api_get_volunteers_by_assignment(assignment_id):
     """
-    Get all volunteers assigned to a specific assignment
+    Get all volunteers assigned to a specific assignment (current race).
     """
     try:
-        volunteers = StafferAROVolunteer.query.filter_by(assignment_id=assignment_id).all()
+        volunteers = apply_race_filter(
+            StafferAROVolunteer.query.filter_by(assignment_id=assignment_id),
+            StafferAROVolunteer,
+        ).all()
         
         return jsonify({
             'success': True,
@@ -29,10 +33,10 @@ def api_get_volunteers_by_assignment(assignment_id):
 @login_required
 def api_get_all_volunteers():
     """
-    Get all volunteers with their assignment info
+    Get all volunteers with their assignment info for the current race.
     """
     try:
-        volunteers = StafferAROVolunteer.query.all()
+        volunteers = apply_race_filter(StafferAROVolunteer.query, StafferAROVolunteer).all()
         
         data = []
         for v in volunteers:
@@ -63,6 +67,10 @@ def api_checkin_volunteer():
         from datetime import datetime, UTC
         from extensions import db
         
+        race, err = require_writable_race()
+        if err is not None:
+            return err
+
         data = request.get_json()
         callsign = data.get('callsign')
         status = data.get('status')
@@ -71,7 +79,9 @@ def api_checkin_volunteer():
             return jsonify({'error': 'Callsign and status are required'}), 400
         
         # Update local volunteer record first
-        volunteer = StafferAROVolunteer.query.filter_by(callsign=callsign).first()
+        volunteer = StafferAROVolunteer.query.filter_by(
+            callsign=callsign, race_id=race.id
+        ).first()
         if volunteer:
             volunteer.status = status
             volunteer.status_timestamp = datetime.now(UTC)

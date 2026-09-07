@@ -18,12 +18,14 @@ class ChatRoom(db.Model):
     is_private = db.Column(db.Boolean, default=False)
     password = db.Column(db.String(255), nullable=True)
     moderators = db.Column(db.JSON, default=list)  # Store moderator UUIDs
+    race_id = db.Column(db.String(36), db.ForeignKey('races.id'), nullable=False, index=True)
     
     # Add these relationships after the columns
     messages = db.relationship('ChatMessage', lazy=True, 
                                foreign_keys='ChatMessage.room_id',
                                back_populates='room',
                                cascade='all')
+    race = db.relationship('Race', foreign_keys=[race_id], back_populates='chat_rooms')
 
     def __repr__(self):
         return f'<ChatRoom {self.name}>'
@@ -34,5 +36,6 @@ class ChatRoom(db.Model):
             'name': self.name,
             'description': self.description,
             'enabled': self.enabled,
-            'default': self.default
+            'default': self.default,
+            'race_id': self.race_id,
         }

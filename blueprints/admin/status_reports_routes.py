@@ -5,6 +5,7 @@ from models import StatusReport, StationStatus, Assignment
 from datetime import datetime, UTC
 from . import admin_bp
 from .utils import admin_required
+from blueprints.race_context import apply_race_filter, require_writable_race
 import pandas as pd
 import json
 from io import BytesIO
@@ -16,8 +17,10 @@ from io import BytesIO
 @login_required
 @admin_required
 def status_reports():
-    """Display status reports management page."""
-    status_reports = StatusReport.query.filter_by(delete_flag=False).order_by(StatusReport.time.desc()).all()
+    """Display status reports management page for the current race."""
+    status_reports = apply_race_filter(
+        StatusReport.query.filter_by(delete_flag=False), StatusReport
+    ).order_by(StatusReport.time.desc()).all()
     station_statuses = StationStatus.query.filter_by(enabled=True).all()
     assignments = Assignment.query.filter_by(enabled=True).all()
     
@@ -33,9 +36,11 @@ def status_reports():
 @login_required
 @admin_required
 def export_status_reports():
-    """Export all status reports to CSV."""
+    """Export status reports for the current race to CSV."""
     try:
-        status_reports = StatusReport.query.filter_by(delete_flag=False).all()
+        status_reports = apply_race_filter(
+            StatusReport.query.filter_by(delete_flag=False), StatusReport
+        ).all()
         
         # Create DataFrame
         data = []
@@ -77,8 +82,13 @@ def export_status_reports():
 @login_required
 @admin_required
 def import_status_reports():
-    """Import status reports from CSV file."""
+    """Import status reports from CSV file into the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            flash('Current race is archived or missing; cannot import.', 'error')
+            return redirect(url_for('admin.status_reports'))
+
         if 'file' not in request.files:
             flash('No file selected', 'error')
             return redirect(url_for('admin.status_reports'))
@@ -129,7 +139,8 @@ def import_status_reports():
                     time=time,
                     reporter_id=assignment.id,
                     status_id=station_status.id,
-                    comment=row.get('Comment', '') if pd.notna(row.get('Comment', '')) else None
+                    comment=row.get('Comment', '') if pd.notna(row.get('Comment', '')) else None,
+                    race_id=race.id,
                 )
                 
                 imported_status_reports.append(status_report)
@@ -167,13 +178,18 @@ def import_status_reports():
 @login_required
 @admin_required
 def clear_status_reports():
-    """Clear all status reports."""
+    """Clear all status reports for the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            flash('Current race is archived or missing; cannot clear status reports.', 'error')
+            return redirect(url_for('admin.status_reports'))
+
         # Get count before deletion
-        status_reports_count = StatusReport.query.count()
+        status_reports_count = apply_race_filter(StatusReport.query, StatusReport).count()
         
-        # Delete all status reports
-        StatusReport.query.delete()
+        # Delete status reports for this race only
+        apply_race_filter(StatusReport.query, StatusReport).delete(synchronize_session=False)
         db.session.commit()
         
         # Emit SocketIO event for clear

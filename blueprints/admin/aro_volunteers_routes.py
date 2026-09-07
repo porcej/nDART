@@ -1,20 +1,18 @@
-from flask import render_template, request, jsonify
+from flask import render_template, jsonify
 from flask_login import login_required, current_user
-from extensions import db
-from models import StafferAROVolunteer, Assignment, StafferAssignmentMapping
+from models import StafferAROVolunteer
 from . import admin_bp
 from .utils import admin_required
+from blueprints.race_context import apply_race_filter
 
 
 @admin_bp.route('/aro-volunteers')
 @login_required
 @admin_required
 def aro_volunteers():
-    """Display ARO volunteers from staffer database."""
-    # Get all volunteers with their assignment info
-    volunteers = StafferAROVolunteer.query.all()
+    """Display ARO volunteers from staffer database for the current race."""
+    volunteers = apply_race_filter(StafferAROVolunteer.query, StafferAROVolunteer).all()
     
-    # Prepare data with mapping information
     volunteers_data = []
     for volunteer in volunteers:
         volunteers_data.append({
@@ -42,7 +40,7 @@ def aro_volunteers():
 def get_aro_volunteers_data():
     """Get ARO volunteers data as JSON for DataTables."""
     try:
-        volunteers = StafferAROVolunteer.query.all()
+        volunteers = apply_race_filter(StafferAROVolunteer.query, StafferAROVolunteer).all()
         
         data = []
         for volunteer in volunteers:
@@ -66,4 +64,3 @@ def get_aro_volunteers_data():
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-

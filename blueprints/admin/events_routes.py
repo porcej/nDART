@@ -1,12 +1,16 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
+from flask import render_template, redirect, url_for, request, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from extensions import db, socketio
 from models import Event, Agency, Assignment
 from datetime import datetime, UTC
 from . import admin_bp
 from .utils import admin_required
+from blueprints.race_context import (
+    apply_race_filter,
+    get_current_race,
+    require_writable_race,
+)
 import pandas as pd
-import json
 from io import BytesIO
 
 # ---------------
@@ -16,8 +20,10 @@ from io import BytesIO
 @login_required
 @admin_required
 def events():
-    """Display events management page."""
-    events = Event.query.filter_by(delete_flag=False).order_by(Event.time_in.desc()).all()
+    """Display events management page for the current race."""
+    events = apply_race_filter(
+        Event.query.filter_by(delete_flag=False), Event
+    ).order_by(Event.time_in.desc()).all()
     agencies = Agency.query.filter_by(enabled=True).all()
     assignments = Assignment.query.filter_by(enabled=True).all()
     
@@ -33,9 +39,11 @@ def events():
 @login_required
 @admin_required
 def export_events():
-    """Export all events to CSV."""
+    """Export events for the current race to CSV."""
     try:
-        events = Event.query.filter_by(delete_flag=False).all()
+        events = apply_race_filter(
+            Event.query.filter_by(delete_flag=False), Event
+        ).all()
         
         # Create DataFrame
         data = []
@@ -83,8 +91,13 @@ def export_events():
 @login_required
 @admin_required
 def import_events():
-    """Import events from CSV file."""
+    """Import events from CSV file into the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            flash('Current race is archived or missing; cannot import.', 'error')
+            return redirect(url_for('admin.events'))
+
         if 'file' not in request.files:
             flash('No file selected', 'error')
             return redirect(url_for('admin.events'))
@@ -152,7 +165,8 @@ def import_events():
                     agency_notified=agency_notified,
                     agency_arrival=agency_arrival,
                     resolved=resolved,
-                    notes=row.get('Notes', '') if pd.notna(row.get('Notes', '')) else None
+                    notes=row.get('Notes', '') if pd.notna(row.get('Notes', '')) else None,
+                    race_id=race.id,
                 )
                 
                 imported_events.append(event)
@@ -190,13 +204,18 @@ def import_events():
 @login_required
 @admin_required
 def clear_events():
-    """Clear all events."""
+    """Clear all events for the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            flash('Current race is archived or missing; cannot clear events.', 'error')
+            return redirect(url_for('admin.events'))
+
         # Get count before deletion
-        events_count = Event.query.count()
+        events_count = apply_race_filter(Event.query, Event).count()
         
-        # Delete all events
-        Event.query.delete()
+        # Delete events for this race only
+        apply_race_filter(Event.query, Event).delete(synchronize_session=False)
         db.session.commit()
         
         # Emit SocketIO event for clear

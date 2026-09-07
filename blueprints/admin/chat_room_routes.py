@@ -1,13 +1,14 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify, send_file
+from flask import render_template, request, jsonify
 from flask_login import login_required, current_user
 from extensions import db
-from models import User, Role, ChatRoom, ChatMessage, StationStatus, Assignment, ObservationsCategory
-from datetime import datetime, UTC
-from uuid import uuid4
+from models import ChatRoom, ChatMessage
 from . import admin_bp
 from .utils import admin_required
-import pandas as pd
-from io import BytesIO
+from blueprints.race_context import (
+    apply_race_filter,
+    require_writable_race,
+    require_writable_race_for_row,
+)
 
 # --------------------
 # Chat Room Management
@@ -16,42 +17,52 @@ from io import BytesIO
 @login_required
 @admin_required
 def chat_rooms():
-    """Display all chat rooms."""
-    chat_rooms = ChatRoom.query.all()
-    return render_template('admin/chat_rooms.html', chat_rooms=chat_rooms, username=current_user.name, is_admin=True, is_manager=current_user.is_manager)
+    """Display chat rooms for the current race."""
+    chat_rooms = apply_race_filter(ChatRoom.query, ChatRoom).all()
+    return render_template(
+        'admin/chat_rooms.html',
+        chat_rooms=chat_rooms,
+        username=current_user.name,
+        is_admin=True,
+        is_manager=current_user.is_manager,
+    )
 
 @admin_bp.route('/chat-rooms/<id>', methods=['GET'])
 @login_required
 @admin_required
 def get_chat_room(id):
     """Get a single chat room by UUID."""
-    chat_room = ChatRoom.query.get_or_404(id)
+    chat_room = apply_race_filter(ChatRoom.query.filter_by(id=id), ChatRoom).first_or_404()
     return jsonify(chat_room.to_dict())
 
 @admin_bp.route('/chat-rooms', methods=['POST'])
 @login_required
 @admin_required
 def create_chat_room():
-    """Create a new chat room."""
+    """Create a new chat room for the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            return err
+
         data = request.get_json()
         
-        # Check if name already exists
-        if ChatRoom.query.filter_by(name=data['name']).first():
+        if apply_race_filter(ChatRoom.query.filter_by(name=data['name']), ChatRoom).first():
             return jsonify({'error': 'Chat room name already exists'}), 400
         
         is_default = data.get('default', False)
 
         if is_default:
-            # Set all other default rooms to non-default
-            ChatRoom.query.filter_by(default=True).update({ChatRoom.default: False})
+            apply_race_filter(ChatRoom.query.filter_by(default=True), ChatRoom).update(
+                {ChatRoom.default: False}, synchronize_session=False
+            )
 
-        # Create new chat room
         chat_room = ChatRoom(
             name=data['name'],
             description=data.get('description', ''),
             default=is_default,
-            enabled=data.get('enabled', True)
+            enabled=data.get('enabled', True),
+            race_id=race.id,
         )
         
         db.session.add(chat_room)
@@ -62,7 +73,7 @@ def create_chat_room():
             'data': chat_room.to_dict(),
         }), 201
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to create chat room.'}), 400
 
@@ -72,13 +83,17 @@ def create_chat_room():
 def update_chat_room(id):
     """Update an existing chat room."""
     try:
-        chat_room = ChatRoom.query.get_or_404(id)
+        chat_room = apply_race_filter(ChatRoom.query.filter_by(id=id), ChatRoom).first_or_404()
+        _race, err = require_writable_race_for_row(chat_room)
+        if err is not None:
+            return err
+
         data = request.get_json()
         
-        # Update fields
         if 'name' in data and data['name'] != chat_room.name:
-            # Check if name is already taken
-            existing = ChatRoom.query.filter_by(name=data['name']).first()
+            existing = apply_race_filter(
+                ChatRoom.query.filter_by(name=data['name']), ChatRoom
+            ).first()
             if existing and existing.id != chat_room.id:
                 return jsonify({'error': 'Chat room name already exists'}), 400
             chat_room.name = data['name']
@@ -87,6 +102,10 @@ def update_chat_room(id):
             chat_room.description = data['description']
 
         if 'default' in data:
+            if data['default']:
+                apply_race_filter(ChatRoom.query.filter_by(default=True), ChatRoom).update(
+                    {ChatRoom.default: False}, synchronize_session=False
+                )
             chat_room.default = data['default']
             
         if 'enabled' in data:
@@ -99,7 +118,7 @@ def update_chat_room(id):
             'data': chat_room.to_dict(),
         })
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to update chat room.'}), 400
 
@@ -109,13 +128,17 @@ def update_chat_room(id):
 def delete_chat_room(id):
     """Delete a chat room."""
     try:
-        chat_room = ChatRoom.query.get_or_404(id)
+        chat_room = apply_race_filter(ChatRoom.query.filter_by(id=id), ChatRoom).first_or_404()
+        _race, err = require_writable_race_for_row(chat_room)
+        if err is not None:
+            return err
+
         db.session.delete(chat_room)
         db.session.commit()
         
         return jsonify({'success': 'Chat room deleted successfully.'})
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to delete chat room.'}), 400
 
@@ -125,14 +148,16 @@ def delete_chat_room(id):
 def clear_chat_room_messages(id):
     """Clear all messages in a chat room."""
     try:
-        chat_room = ChatRoom.query.get_or_404(id)
+        chat_room = apply_race_filter(ChatRoom.query.filter_by(id=id), ChatRoom).first_or_404()
+        _race, err = require_writable_race_for_row(chat_room)
+        if err is not None:
+            return err
         
-        # Delete all messages associated with this chat room
         ChatMessage.query.filter_by(room_id=id).delete()
         db.session.commit()
         
         return jsonify({'success': 'Messages cleared successfully.'})
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
         return jsonify({'error': 'Failed to clear chat room messages.'}), 400

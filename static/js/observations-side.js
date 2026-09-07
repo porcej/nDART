@@ -1,4 +1,4 @@
-import { getCurrentTime, timeStringToDate, findLabel, pruneEmptyFields, prepareOptions, handlePreSubmit} from './utils.js';
+import { getCurrentTime, timeStringToDate, findLabel, pruneEmptyFields, prepareOptions, handlePreSubmit, editorCrudButtons} from './utils.js';
 import { initSocketMessages } from './sio.js';
 
 const DATA_TYPE = 'observation';
@@ -141,12 +141,7 @@ observationsTable = new DataTable('#observations-table', {
     columns: observationsCols,
     layout: {
         topStart: {
-            buttons: [
-                { extend: 'create', editor: observationsEditor },
-                { extend: 'edit', editor: observationsEditor },
-                { 
-                    extend: 'remove', editor: observationsEditor,
-                    formMessage: function (e, dt) {
+            buttons: editorCrudButtons(observationsEditor, function (e, dt) {
                         let row = dt
                             .rows(e.modifier())
                             .data()[0]
@@ -154,9 +149,7 @@ observationsTable = new DataTable('#observations-table', {
                             'Are you sure you want to delete this observation?' +
                             `<li> ${row['time']} ${row['bib'] != "" ? `with bib # ${row['bib']}` : ''}</li>`
                         );
-                    }
-                }
-            ]
+                    })
         }
     },
     select: {

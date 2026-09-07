@@ -18,12 +18,17 @@
     
     {# Block for page-specific CSS #}
     {% block extra_css %}{% endblock %}
-    {% if form_options is defined %}
     <script type="text/javascript">
-      window.ndart = {};
+      window.ndart = window.ndart || {};
+      {% if current_race %}
+      window.ndart.current_race = {{ current_race.to_dict()|tojson|safe }};
+      {% else %}
+      window.ndart.current_race = null;
+      {% endif %}
+      {% if form_options is defined %}
       window.ndart.form_options = {{ form_options|tojson|safe }};
+      {% endif %}
     </script>
-    {% endif %}
     {# Block for page-specific JS #}  
     {% block extra_head_js %}{% endblock %}
 </head>
@@ -61,6 +66,12 @@
             </div>
         </div>
     </nav>
+
+    {% if current_race and current_race.is_archived %}
+    <div class="alert alert-warning text-center mb-0 rounded-0" role="alert">
+        <strong>{{ current_race.name }}</strong> is archived — view only. Switch to an active race to make changes.
+    </div>
+    {% endif %}
 
     <!-- Main Content Area -->
     <div class="container{% if full_width %}-fluid{% else %} mt-4{% endif %}">

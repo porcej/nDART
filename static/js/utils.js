@@ -74,3 +74,26 @@ export function buildFilterDropDown(elementId, options, columnIndex, table) {
         });
     }
 }
+
+/** True when the selected race allows create/edit/delete. */
+export function isRaceWritable() {
+    const race = window.ndart && window.ndart.current_race;
+    return !!(race && race.is_writable !== false && !race.is_archived);
+}
+
+/** DataTables Editor button set; empty when the race is archived. */
+export function editorCrudButtons(editor, removeFormMessage) {
+    if (!isRaceWritable()) {
+        return [];
+    }
+    const buttons = [
+        { extend: 'create', editor },
+        { extend: 'edit', editor },
+    ];
+    const removeBtn = { extend: 'remove', editor };
+    if (removeFormMessage) {
+        removeBtn.formMessage = removeFormMessage;
+    }
+    buttons.push(removeBtn);
+    return buttons;
+}

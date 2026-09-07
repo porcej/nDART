@@ -16,13 +16,15 @@ class StafferAROVolunteer(db.Model):
     name = db.Column(db.String(100), nullable=True)
     status = db.Column(db.String(50), nullable=True)  # Current status from staffer
     status_timestamp = db.Column(db.DateTime, nullable=True)  # When status was last updated
+    race_id = db.Column(db.String(36), db.ForeignKey('races.id'), nullable=False, index=True)
     
     __table_args__ = (
-        db.UniqueConstraint('callsign', name='uq_staffer_aro_volunteers_callsign'),
+        db.UniqueConstraint('race_id', 'callsign', name='uq_staffer_aro_volunteers_race_callsign'),
     )
     
     # Relationships
     assignment = db.relationship('Assignment', foreign_keys=[assignment_id], backref='staffer_volunteers')
+    race = db.relationship('Race', foreign_keys=[race_id], back_populates='staffer_volunteers')
     
     def __repr__(self):
         return f"<StafferAROVolunteer {self.name} - {self.callsign}>"
@@ -39,17 +41,21 @@ class StafferAROVolunteer(db.Model):
             'name': self.name,
             'status': self.status,
             'status_timestamp': self.status_timestamp.isoformat() if self.status_timestamp else None,
+            'race_id': self.race_id,
         }
     
     @staticmethod
-    def get_by_assignment(assignment_id):
-        """Get staffer volunteer info by assignment ID"""
-        return StafferAROVolunteer.query.filter_by(assignment_id=assignment_id).first()
+    def get_by_assignment(assignment_id, race_id=None):
+        """Get staffer volunteer info by assignment ID (optionally scoped to a race)."""
+        q = StafferAROVolunteer.query.filter_by(assignment_id=assignment_id)
+        if race_id is not None:
+            q = q.filter_by(race_id=race_id)
+        return q.first()
     
     @staticmethod
-    def update_or_create_by_callsign(callsign, assignment_id=None, staffer_assignment=None, short_code=None, email=None, phone_number=None, name=None, status=None, status_timestamp=None):
-        """Update existing or create new staffer volunteer mapping by callsign"""
-        volunteer = StafferAROVolunteer.query.filter_by(callsign=callsign).first()
+    def update_or_create_by_callsign(callsign, race_id, assignment_id=None, staffer_assignment=None, short_code=None, email=None, phone_number=None, name=None, status=None, status_timestamp=None):
+        """Update existing or create new staffer volunteer mapping by callsign within a race."""
+        volunteer = StafferAROVolunteer.query.filter_by(callsign=callsign, race_id=race_id).first()
         
         if volunteer:
             # Update existing
@@ -80,7 +86,8 @@ class StafferAROVolunteer(db.Model):
                 phone_number=phone_number,
                 name=name,
                 status=status,
-                status_timestamp=status_timestamp
+                status_timestamp=status_timestamp,
+                race_id=race_id,
             )
             db.session.add(volunteer)
         
@@ -88,10 +95,11 @@ class StafferAROVolunteer(db.Model):
         return volunteer
     
     @staticmethod
-    def update_or_create(assignment_id, staffer_assignment=None, short_code=None, callsign=None, email=None, phone_number=None, name=None):
+    def update_or_create(assignment_id, race_id, staffer_assignment=None, short_code=None, callsign=None, email=None, phone_number=None, name=None):
         """Update existing or create new staffer volunteer mapping - deprecated, use update_or_create_by_callsign"""
         return StafferAROVolunteer.update_or_create_by_callsign(
             callsign=callsign,
+            race_id=race_id,
             assignment_id=assignment_id,
             staffer_assignment=staffer_assignment,
             short_code=short_code,

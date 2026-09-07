@@ -1,9 +1,14 @@
 from flask import Blueprint, jsonify, request
-from flask_login import login_required, current_user
+from flask_login import login_required
 from models import Observation
 from extensions import db
 
 from .utils import send_observation_notification, handle_date_fields
+from blueprints.race_context import (
+    apply_race_filter,
+    require_writable_race,
+    require_writable_race_for_row,
+)
 
 observation_bp = Blueprint('observation_bp', __name__, url_prefix='/observations')
 
@@ -13,9 +18,15 @@ observation_bp = Blueprint('observation_bp', __name__, url_prefix='/observations
 def api_create_observation():
     """Create a new observation"""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            return err
+
         data = request.get_json()['data']['0']  # DataTables Editor sends data in this format
+        data.pop('race_id', None)
 
         cleaned_data = handle_date_fields(data)
+        cleaned_data['race_id'] = race.id
 
         # Create a new observation
         new_observation = Observation(**cleaned_data)
@@ -42,12 +53,16 @@ def api_create_observation():
 def api_get_observations(observation_id=None):
     """
     Return Observation data as a JSON in a format compatible with DataTables.
-    For a basic approact (client-side processing), we'll return all rows
+    Scoped to the current race.
     """
     if observation_id is not None:
-        observations = Observation.query.filter_by(id=observation_id, delete_flag=False).all()
+        observations = apply_race_filter(
+            Observation.query.filter_by(id=observation_id, delete_flag=False), Observation
+        ).all()
     else:
-        observations = Observation.query.filter_by(delete_flag=False).all()
+        observations = apply_race_filter(
+            Observation.query.filter_by(delete_flag=False), Observation
+        ).all()
 
     data = [observation.to_dict() for observation in observations]
 
@@ -68,12 +83,19 @@ def api_update_observation(observation_id):
     """Update an existing observation"""
     try:
         data = request.get_json()['data'][observation_id]  # DataTables Editor sends data in this format
+        data.pop('race_id', None)
 
         cleaned_data = handle_date_fields(data)
 
-        observation = Observation.query.filter_by(id=observation_id).first()
+        observation = apply_race_filter(
+            Observation.query.filter_by(id=observation_id), Observation
+        ).first()
         if observation is None:
             return jsonify({'error': 'Observation not found'}), 404
+
+        _race, err = require_writable_race_for_row(observation)
+        if err is not None:
+            return err
         
         # Update the observation
         for key, value in cleaned_data.items():
@@ -100,9 +122,15 @@ def api_update_observation(observation_id):
 def api_delete_observation(observation_id):
     """soft Delete an existing observation"""
     try:
-        observation = Observation.query.filter_by(id=observation_id, delete_flag=False).first()
+        observation = apply_race_filter(
+            Observation.query.filter_by(id=observation_id, delete_flag=False), Observation
+        ).first()
         if observation is None:
             return jsonify({'error': 'Observation not found'}), 404
+
+        _race, err = require_writable_race_for_row(observation)
+        if err is not None:
+            return err
         
         observation.delete_flag = True
         db.session.commit()

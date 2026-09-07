@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, abort, current_app
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
-from models import Event, Observation, Assignment, Agency, ObservationsCategory, StationStatus, StafferAROVolunteer
+from models import Assignment, Agency, ObservationsCategory, StationStatus, StafferAROVolunteer
+from blueprints.race_context import set_current_race, apply_race_filter
 from . import main_bp
 
 def get_form_options():
@@ -11,6 +12,17 @@ def get_form_options():
         'observations_categories': [category.to_form_options() for category in ObservationsCategory.query.filter_by(enabled=True).order_by(ObservationsCategory.sort_order).all()],
         'station_statuses': [station_status.to_form_options() for station_status in StationStatus.query.filter_by(enabled=True).order_by(StationStatus.sort_order).all()]
     }
+
+@main_bp.route('/select-race', methods=['POST'])
+@login_required
+def select_race():
+    """Set the current race in the session and redirect back."""
+    race_id = request.form.get('race_id') or request.args.get('race_id')
+    race = set_current_race(race_id) if race_id else None
+    if race is None:
+        flash('Race not found.', 'error')
+    next_url = request.form.get('next') or request.referrer or url_for('main_bp.dashboard')
+    return redirect(next_url)
 
 @main_bp.route('/dashboard')
 @login_required
@@ -43,7 +55,7 @@ def aro_roster():
 def get_aro_roster_data():
     """Get ARO volunteers data as JSON for DataTables."""
     try:
-        volunteers = StafferAROVolunteer.query.all()
+        volunteers = apply_race_filter(StafferAROVolunteer.query, StafferAROVolunteer).all()
         
         data = []
         for volunteer in volunteers:

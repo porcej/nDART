@@ -12,6 +12,7 @@ from .role import Role
 from .app_settings import AppSettings
 from .staffer_aro_volunteer import StafferAROVolunteer
 from .staffer_assignment_mapping import StafferAssignmentMapping
+from .race import Race, RACE_STATUS_ACTIVE, RACE_STATUS_ARCHIVED
 
 
 __all__ = [
@@ -28,5 +29,8 @@ __all__ = [
     'Role',
     'AppSettings',
     'StafferAROVolunteer',
-    'StafferAssignmentMapping'
+    'StafferAssignmentMapping',
+    'Race',
+    'RACE_STATUS_ACTIVE',
+    'RACE_STATUS_ARCHIVED',
 ]

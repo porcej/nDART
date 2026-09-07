@@ -1,10 +1,14 @@
 from flask import Blueprint, jsonify, request
-from flask_login import login_required, current_user
-from models import StatusReport, Assignment, StationStatus, AppSettings
+from flask_login import login_required
+from models import StatusReport
 from extensions import db
 
 from .utils import send_status_report_notification, handle_date_fields
-from .staffer_api_service import send_status_report_to_staffer, update_status_report_in_staffer
+from blueprints.race_context import (
+    apply_race_filter,
+    require_writable_race,
+    require_writable_race_for_row,
+)
 
 status_report_bp = Blueprint('status_report_bp', __name__, url_prefix='/status_reports')
 
@@ -14,58 +18,21 @@ status_report_bp = Blueprint('status_report_bp', __name__, url_prefix='/status_r
 def api_create_status_report():
     """Create a new status report"""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            return err
+
         data = request.get_json()['data']['0']  # DataTables Editor sends data in this format
+        data.pop('race_id', None)
 
         cleaned_data = handle_date_fields(data)
+        cleaned_data['race_id'] = race.id
 
-        # Create a new status report
         new_status_report = StatusReport(**cleaned_data)
         db.session.add(new_status_report)
         db.session.commit()
 
         send_status_report_notification('new_status_report', new_status_report.to_dict())
-
-        # Send to staffer API if configured
-        # staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
-        # if staffer_enabled.lower() == 'true':
-        #     try:
-        #         # Get additional data for the API call
-        #         reporter_data = None
-        #         status_data = None
-                
-        #         if new_status_report.reporter_id:
-        #             reporter = Assignment.query.get(new_status_report.reporter_id)
-        #             if reporter:
-        #                 reporter_data = {
-        #                     'id': reporter.id,
-        #                     'name': reporter.name if hasattr(reporter, 'name') else None,
-        #                 }
-                
-        #         if new_status_report.status_id:
-        #             status = StationStatus.query.get(new_status_report.status_id)
-        #             if status:
-        #                 status_data = {
-        #                     'id': status.id,
-        #                     'name': status.name if hasattr(status, 'name') else None,
-        #                 }
-                
-        #         # Prepare status report data
-        #         status_report_data = {
-        #             'time': new_status_report.time,
-        #             'reporter_id': new_status_report.reporter_id,
-        #             'status_id': new_status_report.status_id,
-        #             'comment': new_status_report.comment
-        #         }
-                
-        #         result = send_status_report_to_staffer(status_report_data, reporter_data, status_data)
-                
-        #         # Log the result but don't fail the main operation
-        #         if not result.get('success'):
-        #             print(f"Warning: Failed to send status report to staffer API: {result.get('error')}")
-                    
-        #     except Exception as staffer_error:
-        #         # Log the error but don't fail the main operation
-        #         print(f"Warning: Exception while sending to staffer API: {str(staffer_error)}")
 
         return jsonify({
             'data': [new_status_report.to_dict()]
@@ -82,12 +49,16 @@ def api_create_status_report():
 def api_get_status_reports(status_report_id=None):
     """
     Return StatusReport data as a JSON in a format compatible with DataTables.
-    For a basic approact (client-side processing), we'll return all rows
+    Scoped to the current race.
     """
     if status_report_id is not None:
-        status_reports = StatusReport.query.filter_by(id=status_report_id, delete_flag=False).all()
+        status_reports = apply_race_filter(
+            StatusReport.query.filter_by(id=status_report_id, delete_flag=False), StatusReport
+        ).all()
     else:
-        status_reports = StatusReport.query.filter_by(delete_flag=False).all()
+        status_reports = apply_race_filter(
+            StatusReport.query.filter_by(delete_flag=False), StatusReport
+        ).all()
 
     data = [status_report.to_dict() for status_report in status_reports]
 
@@ -107,63 +78,27 @@ def api_get_status_reports(status_report_id=None):
 def api_update_status_report(status_report_id):
     """Update an existing status report"""
     try:
-        data = request.get_json()['data'][status_report_id]  # DataTables Editor sends data in this format
+        data = request.get_json()['data'][status_report_id]
+        data.pop('race_id', None)
 
         cleaned_data = handle_date_fields(data)
 
-        status_report = StatusReport.query.filter_by(id=status_report_id).first()
+        status_report = apply_race_filter(
+            StatusReport.query.filter_by(id=status_report_id), StatusReport
+        ).first()
         if status_report is None:
             return jsonify({'error': 'Status report not found'}), 404
+
+        _race, err = require_writable_race_for_row(status_report)
+        if err is not None:
+            return err
         
-        # Update the status report
         for key, value in cleaned_data.items():
             setattr(status_report, key, value)
         db.session.add(status_report)
         db.session.commit()
 
         send_status_report_notification('edit_status_report', status_report.to_dict())
-
-        # Update in staffer API if configured
-        # staffer_enabled = AppSettings.get_setting('staffer_api_enabled', 'false')
-        # if staffer_enabled.lower() == 'true':
-        #     try:
-        #         # Get additional data for the API call
-        #         reporter_data = None
-        #         status_data = None
-                
-        #         if status_report.reporter_id:
-        #             reporter = Assignment.query.get(status_report.reporter_id)
-        #             if reporter:
-        #                 reporter_data = {
-        #                     'id': reporter.id,
-        #                     'name': reporter.name if hasattr(reporter, 'name') else None,
-        #                 }
-                
-        #         if status_report.status_id:
-        #             status = StationStatus.query.get(status_report.status_id)
-        #             if status:
-        #                 status_data = {
-        #                     'id': status.id,
-        #                     'name': status.name if hasattr(status, 'name') else None,
-        #                 }
-                
-        #         # Prepare status report data
-        #         status_report_data = {
-        #             'time': status_report.time,
-        #             'reporter_id': status_report.reporter_id,
-        #             'status_id': status_report.status_id,
-        #             'comment': status_report.comment
-        #         }
-                
-        #         result = update_status_report_in_staffer(status_report_id, status_report_data, reporter_data, status_data)
-                
-        #         # Log the result but don't fail the main operation
-        #         if not result.get('success'):
-        #             print(f"Warning: Failed to update status report in staffer API: {result.get('error')}")
-                    
-        #    except Exception as staffer_error:
-        #        # Log the error but don't fail the main operation
-        #        print(f"Warning: Exception while updating in staffer API: {str(staffer_error)}")
 
         return jsonify({
             'data': [status_report.to_dict()]
@@ -179,18 +114,21 @@ def api_update_status_report(status_report_id):
 def api_delete_status_report(status_report_id):
     """soft Delete one or more status reports"""
     try:
-        # Check if we have data in the request body (multiple deletes)
         request_data = request.get_json() if request.data else None
         
         deleted_reports = []
         
         if request_data and 'data' in request_data:
-            # Multiple deletes - DataTables Editor sends: {"data": {"id1": {...}, "id2": {...}}}
             ids_to_delete = list(request_data['data'].keys())
             
             for report_id in ids_to_delete:
-                status_report = StatusReport.query.filter_by(id=report_id, delete_flag=False).first()
+                status_report = apply_race_filter(
+                    StatusReport.query.filter_by(id=report_id, delete_flag=False), StatusReport
+                ).first()
                 if status_report:
+                    _race, err = require_writable_race_for_row(status_report)
+                    if err is not None:
+                        return err
                     status_report.delete_flag = True
                     deleted_reports.append(status_report.to_dict())
                     send_status_report_notification('remove_status_report', status_report.to_dict())
@@ -204,10 +142,15 @@ def api_delete_status_report(status_report_id):
                 'data': deleted_reports
             })
         else:
-            # Single delete - ID in URL
-            status_report = StatusReport.query.filter_by(id=status_report_id, delete_flag=False).first()
+            status_report = apply_race_filter(
+                StatusReport.query.filter_by(id=status_report_id, delete_flag=False), StatusReport
+            ).first()
             if status_report is None:
                 return jsonify({'error': 'Status report not found'}), 404
+
+            _race, err = require_writable_race_for_row(status_report)
+            if err is not None:
+                return err
             
             status_report.delete_flag = True
             db.session.commit()

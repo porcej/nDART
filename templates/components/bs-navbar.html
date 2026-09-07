@@ -1,3 +1,30 @@
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" href="#" id="raceDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        Race{% if current_race %}: {{ current_race.name }}{% if current_race.is_archived %} (archived){% endif %}{% endif %}
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="raceDropdown">
+        {% if races %}
+            {% for race in races %}
+            <li>
+                <form method="post" action="{{ url_for('main_bp.select_race') }}" class="px-0 mb-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="race_id" value="{{ race.id }}">
+                    <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+                    <button type="submit" class="dropdown-item{% if current_race and race.id == current_race.id %} active{% endif %}">
+                        {{ race.name }}{% if race.is_archived %} — archived{% endif %}
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+        {% else %}
+            <li><span class="dropdown-item-text text-muted">No races yet</span></li>
+        {% endif %}
+        {% if current_user.is_admin %}
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.races') }}">Manage races…</a></li>
+        {% endif %}
+    </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.dashboard') }}"> Dashboard </a></li>
 <li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.events') }}"> Events </a></li>
 <li class="nav-item"><a class="nav-link" href="{{ url_for('main_bp.observations') }}"> Observations </a></li>
@@ -11,6 +38,7 @@
         </a>
         <ul class="dropdown-menu" aria-labelledby="adminDropdown">
             <li><a class="dropdown-item" href="{{ url_for('admin.index') }}">Admin Dashboard</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('admin.races') }}">Races</a></li>
             <li><a class="dropdown-item" href="{{ url_for('admin.users') }}">Users</a></li>
             <li><a class="dropdown-item" href="{{ url_for('admin.roles') }}">Roles</a></li>
             <li><a class="dropdown-item" href="{{ url_for('admin.assignments') }}">Assignments</a></li>

@@ -5,6 +5,7 @@ from models import Observation, ObservationsCategory, Assignment
 from datetime import datetime, UTC
 from . import admin_bp
 from .utils import admin_required
+from blueprints.race_context import apply_race_filter, require_writable_race
 import pandas as pd
 import json
 from io import BytesIO
@@ -16,8 +17,10 @@ from io import BytesIO
 @login_required
 @admin_required
 def observations():
-    """Display observations management page."""
-    observations = Observation.query.filter_by(delete_flag=False).order_by(Observation.time.desc()).all()
+    """Display observations management page for the current race."""
+    observations = apply_race_filter(
+        Observation.query.filter_by(delete_flag=False), Observation
+    ).order_by(Observation.time.desc()).all()
     categories = ObservationsCategory.query.filter_by(enabled=True).all()
     assignments = Assignment.query.filter_by(enabled=True).all()
     
@@ -33,9 +36,11 @@ def observations():
 @login_required
 @admin_required
 def export_observations():
-    """Export all observations to CSV."""
+    """Export observations for the current race to CSV."""
     try:
-        observations = Observation.query.filter_by(delete_flag=False).all()
+        observations = apply_race_filter(
+            Observation.query.filter_by(delete_flag=False), Observation
+        ).all()
         
         # Create DataFrame
         data = []
@@ -79,8 +84,13 @@ def export_observations():
 @login_required
 @admin_required
 def import_observations():
-    """Import observations from CSV file."""
+    """Import observations from CSV file into the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            flash('Current race is archived or missing; cannot import.', 'error')
+            return redirect(url_for('admin.observations'))
+
         if 'file' not in request.files:
             flash('No file selected', 'error')
             return redirect(url_for('admin.observations'))
@@ -133,7 +143,8 @@ def import_observations():
                     reporter_id=assignment.id,
                     category_id=category.id,
                     location=row.get('Location', '') if pd.notna(row.get('Location', '')) else None,
-                    notes=row.get('Notes', '') if pd.notna(row.get('Notes', '')) else None
+                    notes=row.get('Notes', '') if pd.notna(row.get('Notes', '')) else None,
+                    race_id=race.id,
                 )
                 
                 imported_observations.append(observation)
@@ -171,13 +182,18 @@ def import_observations():
 @login_required
 @admin_required
 def clear_observations():
-    """Clear all observations."""
+    """Clear all observations for the current race."""
     try:
+        race, err = require_writable_race()
+        if err is not None:
+            flash('Current race is archived or missing; cannot clear observations.', 'error')
+            return redirect(url_for('admin.observations'))
+
         # Get count before deletion
-        observations_count = Observation.query.count()
+        observations_count = apply_race_filter(Observation.query, Observation).count()
         
-        # Delete all observations
-        Observation.query.delete()
+        # Delete observations for this race only
+        apply_race_filter(Observation.query, Observation).delete(synchronize_session=False)
         db.session.commit()
         
         # Emit SocketIO event for clear

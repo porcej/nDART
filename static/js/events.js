@@ -1,4 +1,4 @@
-import { getCurrentTime, timeStringToDate, findLabel, prepareOptions, handlePreSubmit, buildFilterDropDown } from './utils.js';
+import { getCurrentTime, timeStringToDate, findLabel, prepareOptions, handlePreSubmit, buildFilterDropDown, isRaceWritable, editorCrudButtons } from './utils.js';
 import { initSocketMessages } from './sio.js';
 
 const WARNTIME = 10; // in minutes
@@ -240,12 +240,7 @@ eventsTable = new DataTable('#events-table', {
     columns: events_cols,
     layout: {
         topStart: {
-            buttons: [
-                { extend: 'create', editor: eventsEditor },
-                { extend: 'edit', editor: eventsEditor },
-                { 
-                    extend: 'remove', editor: eventsEditor,
-                    formMessage: function (e, dt) {
+            buttons: editorCrudButtons(eventsEditor, function (e, dt) {
                         let row = dt
                             .rows(e.modifier())
                             .data()[0]
@@ -253,9 +248,7 @@ eventsTable = new DataTable('#events-table', {
                             'Are you sure you want to delete this event?' +
                             `<li> ${row['time']} ${row['bib'] != "" ? `with bib # ${row['bib']}` : ''}</li>`
                         );
-                    }
-                }
-            ]
+                    })
         }
     },
     select: {
@@ -306,6 +299,9 @@ buildFilterDropDown('agencyFilter', 'agencies', agencyColIndex, eventsTable);
 
 // Activate the bubble editor on click of a table cell
 eventsTable.on('click', 'tbody td:not(:first-child)', function (e) {
+    if (!isRaceWritable()) {
+        return;
+    }
     eventsEditor.bubble(this);
 });
 
