@@ -50,7 +50,7 @@ class Config:
     
     # Application Settings
     HOST = os.environ.get('NDART_HOST') or '0.0.0.0'
-    PORT = int(os.environ.get('FLASK_PORT') or 5000)
+    PORT = int(os.environ.get('FLASK_PORT') or 8000)
     
     # Logging Configuration
     LOGGING_PATH = os.environ.get('LOGGING_PATH') or os.path.join(basedir, 'logs')
