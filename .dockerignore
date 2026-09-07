@@ -86,8 +86,5 @@ docker-compose.yml
 # Old files
 old/
 
-# Migration files (keep structure but not the actual migrations)
-migrations/versions/*.py
-
 # Static vendor files that might be large
 static/vend/old/
