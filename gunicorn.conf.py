@@ -2,28 +2,32 @@
 # -*- coding: utf-8 -*-
 
 """
-Gunicorn Configuration for nDART
+Gunicorn configuration for nDART (Flask-SocketIO).
 
-This configuration is optimized for Flask-SocketIO applications with eventlet.
+Gunicorn auto-loads this file from the working directory when present.
+Keep it aligned with docker-compose.production.yml (gevent, single worker).
+
+Do NOT enable max_requests or preload_app with a single Socket.IO worker:
+recycling the only worker can hang on exit and cause Cloudflare 524s.
 """
 
-import multiprocessing
 import os
 
 # Server socket
 bind = f"0.0.0.0:{os.environ.get('FLASK_PORT', 5000)}"
 backlog = 2048
 
-# Worker processes
-workers = 1  # Use 1 worker for SocketIO (eventlet doesn't support multiple workers)
-worker_class = "eventlet"
+# Worker processes — Socket.IO requires a single async worker unless using a message queue
+workers = 1
+worker_class = os.environ.get("GUNICORN_WORKER_CLASS", "gevent")
 worker_connections = 1000
 timeout = 120
-keepalive = 2
+keepalive = 5
+graceful_timeout = 30
 
-# Restart workers after this many requests, to help prevent memory leaks
-max_requests = 1000
-max_requests_jitter = 100
+# Disable request-based worker recycling (0 = off)
+max_requests = 0
+max_requests_jitter = 0
 
 # Logging
 accesslog = "-"
@@ -40,48 +44,20 @@ pidfile = None
 user = None
 group = None
 tmp_upload_dir = None
+preload_app = False
 
-# SSL (if needed)
-keyfile = os.environ.get('SSL_KEYFILE', None)
-certfile = os.environ.get('SSL_CERTFILE', None)
+# SSL (optional)
+keyfile = os.environ.get("SSL_KEYFILE", None)
+certfile = os.environ.get("SSL_CERTFILE", None)
 
-# Preload application for better performance
-preload_app = True
 
-# Worker timeout for graceful shutdown
-graceful_timeout = 30
-
-# Environment variables
-raw_env = [
-    "FLASK_APP=wsgi.py",
-    f"FLASK_ENV={os.environ.get('FLASK_ENV', 'production')}",
-]
-
-# SocketIO specific settings
 def when_ready(server):
-    """Called just after the server is started."""
     server.log.info("nDART server is ready. Workers: %s", server.cfg.workers)
 
+
 def worker_int(worker):
-    """Called just after a worker exited on SIGINT or SIGQUIT."""
     worker.log.info("worker received INT or QUIT signal")
 
-def pre_fork(server, worker):
-    """Called just before a worker is forked."""
-    server.log.info("Worker spawned (pid: %s)", worker.pid)
-
-def post_fork(server, worker):
-    """Called just after a worker has been forked."""
-    server.log.info("Worker spawned (pid: %s)", worker.pid)
-
-def pre_exec(server):
-    """Called just before a new master process is forked."""
-    server.log.info("Forked child, re-executing.")
-
-def when_ready(server):
-    """Called just after the server is started."""
-    server.log.info("Server is ready. Spawning workers")
 
 def worker_abort(worker):
-    """Called when a worker received the SIGABRT signal."""
     worker.log.info("worker received SIGABRT signal")

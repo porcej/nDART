@@ -24,9 +24,9 @@ services:
       # To use your existing production database, uncomment and modify:
       # - /path/to/your/production/database.db:/app/db/app.db:ro  # Read-only
       # - /path/to/your/production/database.db:/app/db/app.db      # Read-write
-    # Socket.IO needs a single gevent worker. Do NOT use --max-requests or
-    # --preload: recycling the only worker can hang on exit and Cloudflare
-    # returns 524 while Gunicorn waits for --timeout (120s).
+    # Socket.IO needs a single gevent worker. Explicitly disable max-requests
+    # (gunicorn.conf.py is auto-loaded from /app and previously re-enabled it,
+    # causing hung worker exits and Cloudflare 524s).
     command: [
       "gunicorn",
       "-k", "gevent",
@@ -36,6 +36,7 @@ services:
       "--timeout", "120",
       "--graceful-timeout", "30",
       "--keep-alive", "5",
+      "--max-requests", "0",
       "wsgi_gevent:application"
     ]
     healthcheck:
